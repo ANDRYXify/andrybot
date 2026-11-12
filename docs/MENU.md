@@ -65,7 +65,7 @@ lo dicesse.
 - Vetrina: Pagina link, Donazioni, Settimana, Grafiche social, Social
 - Community: Telegram, Discord
 - Strumenti: QR su misura, Emote e badge, Media kit, Pannelli
-- Account: Accesso e dati, Abbonamento
+- Account: Accesso e dati, Personalizzazione, Abbonamento
 
 ## Come si misura
 
@@ -189,6 +189,10 @@ menu/sottomenu/navigazione in generale? sì? la configuri e la lanci?».
    - **Righe**: comode o fitte (fitte: il menu intero con un gruppo da 7
      aperto sta in 768). Vale col mouse: sul telefono le righe restano alte
      quanto un dito.
+   - **Lato del menu sul computer**: a sinistra (di serie) o a destra. La
+     lente e la plancia, che stanno fisse in basso a destra, passano a
+     sinistra: con il menu a destra le coprirebbe. Sul telefono il menu si
+     apre sempre da destra, dov'è il pollice: lì il lato non si sceglie.
    - **Pagina d'apertura**: Stato, l'ultima usata, o una voce a scelta. Un
      indirizzo con la sua pagina vince sempre.
    - **Rimetti il menù di serie**: toglie tutte le scelte.
@@ -208,7 +212,7 @@ menu/sottomenu/navigazione in generale? sì? la configuri e la lanci?».
    uguali.
 10. **Dove si fa.** Una stella accanto al titolo di ogni pagina («Mettila fra
     le mie»): il gesto più frequente costa un clic, dove sei. Tutto il resto
-    nella carta «Menù su misura» (Account → Accesso e dati), a cui porta anche
+    nella carta «Menù su misura» (Account → Personalizzazione, `docs/ASPETTO.md`), a cui porta anche
     il tasto «Sistema il menù» in fondo al menu. Ogni gesto vale subito, e il
     menu accanto è l'anteprima. Il tasto porta la carta in vista e la segue
     finché la pagina non ha finito di caricarsi: le carte sopra crescono

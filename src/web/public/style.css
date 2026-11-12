@@ -2902,6 +2902,13 @@ body:not(.con-nav) .salta { display: none; }
     background: var(--tono-carta) 0 0 / var(--tono-passo), var(--bg);
   }
   body.con-nav.tutto-schermo .backdrop, body.con-nav.tutto-schermo .drawer-testa { display: none; }
+  body.con-nav.menu-destra:not(.tutto-schermo) .drawer { left: auto; right: 0; border-right: 0; border-left: 3px solid var(--contorno); }
+  body.con-nav.menu-destra:not(.tutto-schermo) .area-principale { margin-left: 0; margin-right: var(--lato); }
+  body.con-nav.menu-destra.tutto-schermo .drawer { left: auto; right: .5rem; }
+  body.con-nav.menu-destra.tutto-schermo .bordo-menu { left: auto; right: 0; }
+  body.con-nav.menu-destra.tutto-schermo .contenuto { padding-left: var(--margine-pagina); padding-right: max(var(--margine-pagina), calc(var(--bordo-menu) + .6rem)); }
+  body.con-nav.menu-destra.tutto-schermo .apri-menu { order: 0; margin-left: auto; }
+  body.con-nav.menu-destra #cerca-lancia, body.con-nav.menu-destra #plancia-lancia { right: auto; left: calc(18px + env(safe-area-inset-left, 0px)); }
   body.con-nav.tutto-schermo .bordo-menu {
     display: block; position: fixed; left: 0; top: var(--top-h); bottom: 0; width: var(--bordo-menu); z-index: 39;
   }

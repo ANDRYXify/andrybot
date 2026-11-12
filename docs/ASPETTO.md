@@ -112,11 +112,29 @@ e sopra c'è la veste di chi usa il pannello.
     come testo; «Incolla una veste» le prende, le ripulisce con le stesse
     regole e le applica. Uno streamer può dare la sua ai moderatori.
 
-## Dove si fa
+## Dove si fa: la pagina «Personalizzazione»
 
-Account → Accesso e dati, carta «Aspetto su misura», accanto a «Menù su
-misura»: sono le due cose della persona. Ci porta un tasto con la tavolozza
-nel piede della barra del menù, accanto a «Sistema il menù»: il piede è il
+Chiesto così: «ricordati di fare una sezione ad hoc per personalizzazione,
+quindi colori menu, temi, posizione, personalizzazione etc».
+
+Le cose della persona stavano in fondo ad «Accesso e dati», fra le
+piattaforme e la cancellazione del conto: chi cercava i colori doveva sapere
+che erano lì. Adesso hanno una pagina loro, **Account → Personalizzazione**
+(`personalizza`), fra «Accesso e dati» e «Abbonamento». Dentro, nell'ordine in
+cui una persona ci pensa:
+
+1. **Tema e lingua**: il tema (come il dispositivo, chiaro, scuro: prima
+   «come il dispositivo» si perdeva al primo tocco del tasto in alto e non si
+   poteva più riavere), la lingua del pannello, e il lato del menu sul
+   computer (`docs/MENU.md`).
+2. **Aspetto su misura**: questa veste.
+3. **Menù su misura**: le voci, l'ordine, la barra del telefono.
+
+La lingua del bot in chat e le altre preferenze del canale restano in
+«Accesso e dati»: sono del canale, non della persona.
+
+Ci portano i due tasti nel piede della barra del menu: «Sistema il menù» alla
+carta del menu, quello con la tavolozza alla carta dell'aspetto. Il piede è il
 posto degli strumenti che cambiano il pannello e non sono pagine
 (`docs/MENU.md`, regola 10). Ogni gesto vale subito, e l'anteprima è il
 pannello stesso.

@@ -61,7 +61,7 @@ test('ogni scheda carica quello che mostra', () => {
 test('il menu ha Stato all\'inizio e «Accesso e dati» nel gruppo Account', () => {
   const g = APP.slice(APP.indexOf('const GRUPPI = ['), APP.indexOf('\n];', APP.indexOf('const GRUPPI = [')));
   assert.match(g, /^const GRUPPI = \[\n {2}\{ id: 'inizio', nome: 'Stato', schede: \[\n {4}\['stato', 'Stato'\],\n {2}\] \},/, 'Stato e\' la prima voce, da sola');
-  assert.match(g, /\{ id: 'account', nome: 'Account', schede: \[\n {4}\['account', 'Accesso e dati'\],\n {4}\['sottoscrizione', 'Abbonamento'\],/);
+  assert.match(g, /\{ id: 'account', nome: 'Account', schede: \[\n {4}\['account', 'Accesso e dati'\],\n {4}\['personalizza', 'Personalizzazione'\],\n {4}\['sottoscrizione', 'Abbonamento'\],/);
   assert.match(APP, /const SOLO_DISCORD = new Set\(\[[^\]]*'account'/, 'anche chi ha solo Discord ha il suo account');
   const c = funzione(APP, 'navDrawerHtml');
   assert.ok(c.includes('if (g.schede.length === 1) return `<div class="drawer-grp drawer-solo">${voci}</div>`;'), 'un gruppo con una voce sola e\' una voce: niente titolo, niente da chiudere');

@@ -106,14 +106,17 @@ test('una voce e un gruppo nati dopo le scelte compaiono al loro posto di fabbri
 test('la ripulitura del server e quella del pannello sono la stessa', () => {
   const casi = [undefined, null, 'x', [], {}, { mie: ['clip', 'CLIP', 'a b', 'clip', 7, 'x'.repeat(30)], nomeMie: '  Le <b>mie</b>\u0007 preferite di sempre e per sempre  ' },
     { nascoste: TUTTE.concat(TUTTE), gruppi: ['a', 'b', 'a'], ordine: { diretta: ['x', 'x', 'y'], 'no no': ['z'], vuoto: 'x' }, barra: ['a', 'b', 'c', 'd', 'e'] },
-    { modo: 'tutti', righe: 'fitte', apre: 'ultima' }, { modo: 'ricorda', apre: 'clip' }, { modo: 1, righe: null, apre: 'Non Valida' },
+    { modo: 'tutti', righe: 'fitte', apre: 'ultima', lato: 'destra' }, { lato: 'centro' }, { modo: 'ricorda', apre: 'clip' }, { modo: 1, righe: null, apre: 'Non Valida' },
     { mie: Array.from({ length: 40 }, (_, i) => 'v' + i) }];
   for (const c of casi) assert.deepEqual(pulisci(c), menuPulito(c), JSON.stringify(c)?.slice(0, 60));
   const p = pulisci(casi[5]);
   assert.deepEqual(p.mie, ['clip']);
   assert.ok(!/[<>\u0000-\u001f]/.test(p.nomeMie) && p.nomeMie.length <= 24);
-  assert.equal(pulisci(casi[10]).mie.length, MIE_MAX);
+  assert.equal(pulisci(casi[casi.length - 1]).mie.length, MIE_MAX, 'l\'ultimo caso ha quaranta voci fra le mie');
   assert.ok(diSerie(undefined) && diSerie({ modo: 'boh' }) && !diSerie({ mie: ['clip'] }) && !diSerie({ righe: 'fitte' }));
+  assert.ok(diSerie({ lato: 'centro' }) && !diSerie({ lato: 'destra' }), 'il lato del menu e\' una scelta, e uno sbagliato vale «sinistra»');
+  assert.equal(menuSuMisura(GRUPPI, { lato: 'destra' }).lato, 'destra');
+  assert.equal(menuSuMisura(GRUPPI, {}).lato, 'sinistra');
 });
 
 test('le scelte sono della persona: stanno nel conto di chi e\' entrato, non nel canale gestito', () => {

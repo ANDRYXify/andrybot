@@ -19,6 +19,7 @@ export const MIE_MAX = 12;
 export const BARRA_MAX = 4;
 export const MODI = ['uno', 'ricorda', 'tutti'];
 export const RIGHE = ['comode', 'fitte'];
+export const LATI = ['sinistra', 'destra'];
 
 const id = (x) => (typeof x === 'string' && /^[a-z0-9]{1,24}$/.test(x) ? x : '');
 const lista = (x, max) => [...new Set((Array.isArray(x) ? x : []).map(id).filter(Boolean))].slice(0, max);
@@ -38,6 +39,7 @@ export function pulisci(grezze) {
     barra: lista(o.barra, BARRA_MAX),
     modo: MODI.includes(o.modo) ? o.modo : 'uno',
     righe: RIGHE.includes(o.righe) ? o.righe : 'comode',
+    lato: o.lato === 'destra' ? 'destra' : 'sinistra',
     apre: o.apre === 'ultima' ? 'ultima' : (id(o.apre) || 'stato'),
   };
 }
@@ -46,7 +48,7 @@ export function pulisci(grezze) {
 export function diSerie(m) {
   const p = pulisci(m);
   return !p.mie.length && !p.nomeMie && !p.nascoste.length && !p.gruppi.length && !Object.keys(p.ordine).length
-    && !p.barra.length && p.modo === 'uno' && p.righe === 'comode' && p.apre === 'stato';
+    && !p.barra.length && p.modo === 'uno' && p.righe === 'comode' && p.lato === 'sinistra' && p.apre === 'stato';
 }
 
 // Le scelte della persona, o null se non ne ha (o non ha un conto suo).

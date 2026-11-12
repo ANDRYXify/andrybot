@@ -9,7 +9,7 @@ const TUTTO = PREZZO_BUNDLE('tutto');
 
 export default {
   slug: 'account',
-  schede: ['account', 'sottoscrizione'],
+  schede: ['account', 'personalizza', 'sottoscrizione'],
   titolo: 'Account e abbonamento: moderatori, dati, piani | SocialBot',
   h1: 'Manuale di account e abbonamento',
   desc: 'Collegare Twitch, Kick e YouTube, entrare con una passkey, far entrare i moderatori, scaricare o cancellare i dati, scegliere piano ed extra.',
@@ -241,6 +241,34 @@ export default {
       'La carta la vede solo il proprietario del canale.',
     ] },
 
+    { h3: 'Andarsene' },
+    { p: [
+      'Solo il proprietario può cancellare. Se te ne vai non resta niente di tuo: comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati, collegamenti ai tuoi account, recensione. Il bot esce dal tuo canale.',
+      'Non si annulla e non c\'è un cestino. Se vuoi tenerti qualcosa, scarica prima i tuoi dati.',
+    ] },
+    { passi: [
+      { t: 'Apri «Voglio cancellare tutto». ', d: 'Il pannello guarda cosa c\'è e te lo elenca in «Adesso qui c\'è: …». Se non c\'è ancora niente, dice «Non c\'è ancora niente da cancellare.».' },
+      { t: 'Scrivi il nome del canale. ', d: 'La carta te lo mostra: «Scrivi «nome» per confermare». È il nome come lo vedi sulla tua piattaforma. Vale per i canali Twitch, Kick, YouTube e Discord.' },
+      { t: 'Premi «Cancella tutto per sempre». ', d: 'Il tasto si accende solo quando il nome combacia.' },
+    ] },
+    { p: [
+      'Se hai un abbonamento a pagamento, prima di cancellare i dati lo disdiciamo su Stripe: non ci saranno altri addebiti. Se Stripe non risponde, <strong>non cancelliamo niente</strong> e leggi «Non riesco a disdire il tuo abbonamento su Stripe: non ho cancellato niente. Riprova fra poco.». Se in quel momento i pagamenti sono chiusi, leggi «Hai un abbonamento attivo e adesso non riesco a disdirlo: scrivi ad andryxify prima di cancellare.».',
+      'Quando ha finito, il pannello dice «Fatto: non è rimasto niente di tuo. Adesso esci.» e il tasto «Esci» chiude la sessione.',
+    ] },
+
+    { h2: 'Personalizzazione', scheda: 'personalizza', p: [
+      'Una pagina sola per tutto quello che cambia il pannello per te: il tema, la lingua, i colori, i caratteri, il menù e da che lato sta. Le scelte sono tue e non del canale: ti seguono su ogni dispositivo, anche quando gestisci il canale di un altro, e la pagina la vedono anche i moderatori, ognuno con le sue.',
+      'Ci arrivi dal menù (Account → Personalizzazione) o dai due tasti nel piede del menù: «Sistema il menù» porta alla carta del menù, quello con la tavolozza alla carta dell\'aspetto.',
+    ] },
+
+    { h3: 'Tema e lingua' },
+    { tabella: [
+      ['Cosa', 'Valori', 'Cosa succede'],
+      ['«Il tema»', 'Come il dispositivo, chiaro, scuro', '«Come il dispositivo» segue il chiaro o lo scuro del telefono o del computer, anche mentre cambia. Il tasto col sole e la luna, in alto, passa fra chiaro e scuro.'],
+      ['«La lingua del pannello»', 'Italiano, English, Español', 'La lingua di tutto il pannello. Quella del bot in chat sta nelle preferenze del canale, in Accesso e dati.'],
+      ['«Il menù, sul computer»', 'A sinistra, a destra', 'Il lato dove sta la barra del menù sullo schermo largo. La lente e la plancia si spostano dall\'altra parte, così non la coprono. Sul telefono il menù si apre sempre da destra, dov\'è il pollice.'],
+    ] },
+
     { h3: 'Menù su misura' },
     { p: [
       'Il menù del pannello è di chi lo usa. Le scelte sono tue e non del canale: ti seguono sul telefono e sul computer, e anche quando gestisci il canale di un altro. Ogni gesto vale subito, senza salvare.',
@@ -286,21 +314,6 @@ export default {
       'Se un CSS ti rende inservibile lo schermo, apri <code>socialbot.live/?aspetto=serie</code>: entri con l\'aspetto di serie, arrivi a questa carta e le tue scelte sono ancora lì da sistemare. Le pagine d\'ingresso non prendono mai il tuo CSS.',
       'Non si caricano immagini di sfondo né caratteri: sarebbero file da tenere sul server o chiamate ad altri siti. Gli overlay e le pagine pubbliche (link, negozio, donazioni) hanno i loro editor e non cambiano.',
       'La carta la vedono anche i moderatori: ognuno ha la sua veste.',
-    ] },
-
-    { h3: 'Andarsene' },
-    { p: [
-      'Solo il proprietario può cancellare. Se te ne vai non resta niente di tuo: comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati, collegamenti ai tuoi account, recensione. Il bot esce dal tuo canale.',
-      'Non si annulla e non c\'è un cestino. Se vuoi tenerti qualcosa, scarica prima i tuoi dati.',
-    ] },
-    { passi: [
-      { t: 'Apri «Voglio cancellare tutto». ', d: 'Il pannello guarda cosa c\'è e te lo elenca in «Adesso qui c\'è: …». Se non c\'è ancora niente, dice «Non c\'è ancora niente da cancellare.».' },
-      { t: 'Scrivi il nome del canale. ', d: 'La carta te lo mostra: «Scrivi «nome» per confermare». È il nome come lo vedi sulla tua piattaforma. Vale per i canali Twitch, Kick, YouTube e Discord.' },
-      { t: 'Premi «Cancella tutto per sempre». ', d: 'Il tasto si accende solo quando il nome combacia.' },
-    ] },
-    { p: [
-      'Se hai un abbonamento a pagamento, prima di cancellare i dati lo disdiciamo su Stripe: non ci saranno altri addebiti. Se Stripe non risponde, <strong>non cancelliamo niente</strong> e leggi «Non riesco a disdire il tuo abbonamento su Stripe: non ho cancellato niente. Riprova fra poco.». Se in quel momento i pagamenti sono chiusi, leggi «Hai un abbonamento attivo e adesso non riesco a disdirlo: scrivi ad andryxify prima di cancellare.».',
-      'Quando ha finito, il pannello dice «Fatto: non è rimasto niente di tuo. Adesso esci.» e il tasto «Esci» chiude la sessione.',
     ] },
 
     { h2: 'Abbonamento', scheda: 'sottoscrizione', p: [

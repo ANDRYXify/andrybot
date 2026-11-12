@@ -25,11 +25,14 @@
 //   · con `?aspetto=serie` si entra con la veste di fabbrica, e la carta lo dice;
 //   · la demo si apre con la veste di serie anche su un dispositivo che ne ha
 //     una, e non la tocca;
+//   · tema, aspetto e menù stanno nella pagina Personalizzazione; «come il
+//     dispositivo» segue il dispositivo; il menù a destra non copre niente e
+//     non e' coperto; la lingua scelta li' cambia il pannello;
 //   · a 130 % nessuna pagina e' piu' larga dello schermo, ne' sul telefono ne'
 //     sul computer.
 //
 // Uso: node scripts/verifica-aspetto.mjs [--foto <cartella>]
-//      --selftest serve i file rotti in undici modi e pretende undici rossi.
+//      --selftest serve i file rotti in quindici modi e pretende quindici rossi.
 import './_dati-usa-e-getta.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -55,6 +58,10 @@ const ROTTURE = [
   ['il primo disegno resta di fabbrica', 'tema.js', 'if (!v || !v.vars) return;', 'return;'],
   ['l\'uscita di sicurezza non vale al primo disegno', 'tema.js', '(aspetto=serie|demo=1)', '(demo=1)'],
   ['la demo prende la veste di chi la guarda', 'tema.js', '(aspetto=serie|demo=1)', '(aspetto=serie)'],
+  ['le carte restano in Accesso e dati', 'app.js', '    ${pannelloAccount()}\n    ${pannelloPersonalizza()}', '    ${pannelloAccount()}'],
+  ['«Come il dispositivo» resta un tema fisso', 'app.js', "try { if (TEMA === 'auto') localStorage.removeItem('tema'); else localStorage.setItem('tema', TEMA); } catch (e) {  }", "TEMA = TEMA === 'auto' ? 'light' : TEMA; try { localStorage.setItem('tema', TEMA); } catch (e) {  }"],
+  ['il menù a destra non sposta la lente', 'style.css', 'body.con-nav.menu-destra #cerca-lancia, body.con-nav.menu-destra #plancia-lancia { right: auto; left: calc(18px + env(safe-area-inset-left, 0px)); }', ''],
+  ['il lato del menù non si applica', 'app.js', "document.body.classList.toggle('menu-destra', con && menuMio().lato === 'destra');", ''],
   ['l\'uscita di sicurezza non vale nel pannello', 'app.js', 'SB_ASPETTO.dipingi(ASPETTO_FUGA ? {} : scelte,', 'SB_ASPETTO.dipingi(scelte,'],
 ];
 
@@ -72,7 +79,7 @@ async function giro(rottura, dice) {
   }
   const sito = await apriSito({ rotte: (req, res, q) => {
     if (!rotto || q !== rotto.via) return false;
-    res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' }); res.end(rotto.testo); return true;
+    res.writeHead(200, { 'content-type': (rotto.via.endsWith('.css') ? 'text/css' : 'text/javascript') + '; charset=utf-8', 'cache-control': 'no-store' }); res.end(rotto.testo); return true;
   } });
   const fuori = [];
   const apri = async (vista, { indirizzo = '/?demo=1&lang=it', prima = null, tema = 'light' } = {}) => {
@@ -88,7 +95,7 @@ async function giro(rottura, dice) {
   };
   const foto = async (pg, nome) => { if (FOTO && !rottura) { await pg.mouse.move(2, 2); await pg.waitForTimeout(350); await pg.screenshot({ path: join(FOTO, nome + '.png') }); } };
   const carta = async (pg) => {
-    await pg.evaluate(() => window.SB_APP.vai('account'));
+    await pg.evaluate(() => window.SB_APP.vai('personalizza'));
     await pg.waitForSelector('#aspetto-misura .as-preset', { state: 'attached', timeout: 8000 });
     await pg.evaluate(() => { const c = document.getElementById('carta-aspetto'); c.classList.remove('chiusa'); c.scrollIntoView({ block: 'start' }); });
     await pg.waitForSelector('#aspetto-misura .as-preset', { state: 'visible', timeout: 8000 });
@@ -134,7 +141,7 @@ async function giro(rottura, dice) {
     chiedi(nuda.scritte.length === 0 && nuda.veste === null && nuda.fogli === 0 && nuda.radice === '' && nuda.tema === 'light', `senza scelte la radice e' pulita (${JSON.stringify(nuda).slice(0, 110)})`);
     await pg.click('#menu-aspetto');
     await pg.waitForSelector('#aspetto-misura .as-preset', { state: 'visible', timeout: 8000 }).catch(() => {});
-    chiedi(await pg.evaluate(() => window.SB_APP.schedaAttiva === 'account' && !!document.querySelector('#aspetto-misura .as-preset')), 'il tasto nel piede del menu porta alla carta «Aspetto su misura»');
+    chiedi(await pg.evaluate(() => window.SB_APP.schedaAttiva === 'personalizza' && !!document.querySelector('#aspetto-misura .as-preset')), 'il tasto nel piede del menu porta alla carta «Aspetto su misura»');
     await carta(pg);
     const serie = await dipinto(pg);
     chiedi(serie.cTesto >= 4.5 && serie.cPieno >= 4.5, `la veste di serie si legge (testo ${serie.cTesto.toFixed(1)}, tasto pieno ${serie.cPieno.toFixed(1)})`);
@@ -264,13 +271,51 @@ async function giro(rottura, dice) {
     await p2c.context().close();
     const p3 = await apri({ width: 1366, height: 900 }, { indirizzo: '/?demo=1&lang=it&aspetto=serie' });
     await p3.waitForSelector('#aspetto-misura .as-preset', { state: 'attached', timeout: 8000 }).catch(() => {});
-    chiedi(await p3.evaluate(() => window.SB_APP.schedaAttiva === 'account' && !!document.querySelector('#aspetto-misura .riquadro-info a[href="/"]')), 'si arriva alla carta, che dice perche\' e come tornare alla propria veste');
+    chiedi(await p3.evaluate(() => window.SB_APP.schedaAttiva === 'personalizza' && !!document.querySelector('#aspetto-misura .riquadro-info a[href="/"]')), 'si arriva alla carta, che dice perche\' e come tornare alla propria veste');
     await carta(p3);
     await p3.click('[data-as-preset="lava"]');
     const fuga = await dipinto(p3);
     chiedi(fuga.scritte.length === 0 && fuga.tema === 'light', 'e finche\' l\'indirizzo lo chiede le scelte non si dipingono');
     chiedi(await p3.evaluate(() => document.querySelector('[data-as-preset="lava"]').getAttribute('aria-pressed') === 'true'), 'ma restano li\' da sistemare');
     await p3.context().close();
+
+    // La pagina «Personalizzazione»: le cose della persona in un posto solo.
+    const p4 = await apri({ width: 1366, height: 900 }, { tema: 'dark' });
+    await p4.evaluate(() => window.SB_APP.vai('personalizza'));
+    await p4.waitForSelector('#generali-misura select', { state: 'attached', timeout: 8000 });
+    const pagina = await p4.evaluate(() => ({
+      voce: [...document.querySelectorAll('#nav-drawer .drawer-voce')].map((b) => b.dataset.scheda).includes('personalizza'),
+      qui: ['carta-generali', 'carta-aspetto', 'carta-menu'].every((id) => document.getElementById(id)?.closest('#scheda-personalizza')),
+      fuori: !!document.querySelector('#scheda-account #carta-aspetto, #scheda-account #carta-menu'),
+    }));
+    chiedi(pagina.voce && pagina.qui && !pagina.fuori, `tema, aspetto e menù stanno nella pagina Personalizzazione, e non più in Accesso e dati (${JSON.stringify(pagina)})`);
+    await p4.selectOption('#gen-tema', 'light');
+    const fisso = await p4.evaluate(() => [document.documentElement.getAttribute('data-theme'), localStorage.getItem('tema')]);
+    await p4.selectOption('#gen-tema', 'auto');
+    const segue = await p4.evaluate(() => [document.documentElement.getAttribute('data-theme'), localStorage.getItem('tema')]);
+    await p4.emulateMedia({ colorScheme: 'light' });
+    await p4.waitForTimeout(150);
+    const cambia = await p4.evaluate(() => document.documentElement.getAttribute('data-theme'));
+    chiedi(fisso[0] === 'light' && fisso[1] === 'light' && segue[0] === 'dark' && segue[1] === null && cambia === 'light',
+      `«Come il dispositivo» torna a seguire il dispositivo, anche mentre cambia (${JSON.stringify([fisso, segue, cambia])})`);
+    await p4.selectOption('#gen-lato', 'destra');
+    await p4.waitForTimeout(250);
+    const destra = await p4.evaluate(() => {
+      const d = document.getElementById('drawer').getBoundingClientRect(), a = document.querySelector('.area-principale').getBoundingClientRect();
+      const tondi = ['cerca-lancia', 'plancia-lancia'].map((id) => document.getElementById(id)).filter((e) => e && e.offsetWidth).map((e) => e.getBoundingClientRect());
+      // Dall'altra parte vuol dire nell'angolo opposto, come a destra stanno di serie: a 18 px dal bordo.
+      const tocca = tondi.some((r) => r.right > d.left && r.left < d.right) || tondi.some((r) => Math.round(r.left) !== 18);
+      return { menu: Math.round(d.right) === window.innerWidth, area: Math.round(a.right) <= Math.round(d.left) + 1 && a.left < 40, tocca, tondi: tondi.map((r) => Math.round(r.left)), largo: document.documentElement.scrollWidth - window.innerWidth };
+    });
+    chiedi(destra.menu && destra.area && !destra.tocca && destra.largo <= 0, `col menù a destra la barra sta a destra, la pagina le lascia il posto e lente e plancia non la coprono (${JSON.stringify(destra)})`);
+    await foto(p4, 'menu-destra');
+    await p4.selectOption('#gen-lato', 'sinistra');
+    await p4.waitForTimeout(150);
+    chiedi(await p4.evaluate(() => Math.round(document.getElementById('drawer').getBoundingClientRect().left) === 0), 'e tornando a sinistra torna dov\'era');
+    await p4.selectOption('#gen-lingua', 'en');
+    await p4.waitForTimeout(250);
+    chiedi(await p4.evaluate(() => document.documentElement.lang === 'en' && /Personalization/.test(document.querySelector('#nav-drawer [data-scheda="personalizza"]')?.textContent || '')), 'la lingua scelta qui cambia tutto il pannello');
+    await p4.context().close();
 
     // Il telefono.
     const t = await apri({ width: 390, height: 844 });

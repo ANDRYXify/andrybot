@@ -142,7 +142,7 @@ async function giro(rottura, dice) {
     await foto(d, 'computer-stella');
 
     await carta(d);
-    chiedi(await d.evaluate(() => window.SB_APP.schedaAttiva === 'account'), '«Sistema il menù» porta alla carta «Menù su misura»');
+    chiedi(await d.evaluate(() => window.SB_APP.schedaAttiva === 'personalizza'), '«Sistema il menù» porta alla carta «Menù su misura», nella pagina Personalizzazione');
     await d.click('#menu-misura [data-mm="mia"][data-id="clip"]');
     await d.click('#menu-misura [data-mm="mie"][data-id="clip"][data-passo="-1"]');
     const m2 = await menu(d);

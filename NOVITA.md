@@ -49,15 +49,18 @@ comandi diversi da quelli della riga italiana.
 - «Sistema il menù» ora è un tasto a sé in fondo alla barra del menù, staccato dall'elenco delle pagine. Sul computer resta sempre a portata, anche col menù lungo. [vai: account]
   en: «Arrange the menu» is now a button of its own at the bottom of the menu bar, apart from the list of pages. On a computer it stays within reach, even with a long menu.
   es: «Ordena el menú» ahora es un botón aparte al final de la barra del menú, separado de la lista de páginas. En el ordenador queda siempre a mano, incluso con el menú largo.
-- [importante] L'aspetto di SocialBot ora lo scegli tu: quindici vesti pronte, colori, caratteri, grandezza, angoli e ombre, per il tema chiaro e per lo scuro. È solo tuo e ti segue su ogni dispositivo. [vai: account]
+- [importante] L'aspetto di SocialBot ora lo scegli tu: quindici vesti pronte, colori, caratteri, grandezza, angoli e ombre, per il tema chiaro e per lo scuro. È solo tuo e ti segue su ogni dispositivo. [vai: personalizza]
   en: You now choose how SocialBot looks: fifteen ready-made looks, colours, typefaces, size, corners and shadows, for the light theme and the dark one. It is yours alone and follows you on every device.
   es: El aspecto de SocialBot ahora lo eliges tú: quince aspectos ya hechos, colores, tipografías, tamaño, esquinas y sombras, para el tema claro y el oscuro. Es solo tuyo y te sigue en todos tus dispositivos.
   > Un aspetto su misura
-  > Apri la tavolozza in fondo al menù, accanto a «Sistema il menù». Scegli una veste o i tuoi colori: se una scritta non si leggerebbe, il colore si ritocca da solo e te lo dico.
+  > Apri Account → Personalizzazione, o la tavolozza in fondo al menù. Scegli una veste o i tuoi colori: se una scritta non si leggerebbe, il colore si ritocca da solo.
   en> A look of your own
-  en> Open the palette at the bottom of the menu, next to «Arrange the menu». Pick a look or your own colours: if some text would not be readable, the colour adjusts itself and I tell you.
+  en> Open Account → Personalization, or the palette at the bottom of the menu. Pick a look or your own colours: if some text would not be readable, the colour adjusts itself.
   es> Un aspecto a medida
-  es> Abre la paleta al final del menú, junto a «Ordena el menú». Elige un aspecto o tus colores: si un texto no se leería, el color se retoca solo y te lo digo.
+  es> Abre Cuenta → Personalización, o la paleta al final del menú. Elige un aspecto o tus colores: si un texto no se leería, el color se retoca solo.
+- Tema, lingua, colori e menù ora stanno insieme in una pagina sola, Account → Personalizzazione. Il menù può stare anche a destra, e il tema può tornare a seguire il dispositivo. [vai: personalizza]
+  en: Theme, language, colours and menu now live together on one page, Account → Personalization. The menu can also sit on the right, and the theme can go back to following the device.
+  es: Tema, idioma, colores y menú ahora están juntos en una sola página, Cuenta → Personalización. El menú también puede estar a la derecha, y el tema puede volver a seguir al dispositivo.
 
 ## 2026-11-11
 

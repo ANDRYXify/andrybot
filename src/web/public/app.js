@@ -4797,6 +4797,7 @@ const GRUPPI = [
   ] },
   { id: 'account', nome: 'Account', schede: [
     ['account', 'Accesso e dati'],
+    ['personalizza', 'Personalizzazione'],
     ['sottoscrizione', 'Abbonamento'],
   ] },
 ];
@@ -4882,6 +4883,7 @@ const T_SCHEDA = {
   kit: ['Media kit', 'Media kit', 'Media kit'],
   pannelli: ['Pannelli', 'Panels', 'Paneles'],
   account: ['Accesso e dati', 'Access & data', 'Acceso y datos'],
+  personalizza: ['Personalizzazione', 'Personalization', 'Personalización'],
   sottoscrizione: ['Abbonamento', 'Subscription', 'Suscripción'],
   studio: ['Studio Web', 'Web Studio', 'Estudio Web'],
   admin: ['Gestione', 'Management', 'Gestión'],
@@ -4903,7 +4905,7 @@ function percorso(id) {
   return pezzi.join(' → ');
 }
 
-const SOLO_DISCORD = new Set(['ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro', 'pagina', 'stato', 'account', 'sottoscrizione']);
+const SOLO_DISCORD = new Set(['ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro', 'pagina', 'stato', 'account', 'personalizza', 'sottoscrizione']);
 const senzaDiretta = () => stato?.piattaforma === 'discord' || stato?.piattaforma === 'mail';
 
 function elencoGruppi() {
@@ -4933,6 +4935,7 @@ function menuPulito(grezze) {
     barra: lista(o.barra, 4),
     modo: ['uno', 'ricorda', 'tutti'].includes(o.modo) ? o.modo : 'uno',
     righe: ['comode', 'fitte'].includes(o.righe) ? o.righe : 'comode',
+    lato: o.lato === 'destra' ? 'destra' : 'sinistra',
     apre: o.apre === 'ultima' ? 'ultima' : (id(o.apre) || 'stato'),
   };
 }
@@ -4968,6 +4971,7 @@ function menuSuMisura(fabbrica, scelte) {
     nomeMie: s.nomeMie,
     modo: s.modo,
     righe: s.righe,
+    lato: s.lato,
     apre: s.apre === 'ultima' || tutte.has(s.apre) ? s.apre : 'stato',
   };
 }
@@ -5005,6 +5009,8 @@ function menuRidisegna() {
   const con = document.body.classList.contains('con-nav');
   if (nav && con) nav.innerHTML = navDrawerHtml();
   document.body.classList.toggle('menu-fitto', con && menuMio().righe === 'fitte');
+  document.body.classList.toggle('menu-destra', con && menuMio().lato === 'destra');
+  disegnaGenerali();
   aggiornaBarraGiu();
   aggiornaStellaMia();
   disegnaMenuMisura();
@@ -5089,6 +5095,7 @@ const ICONA = {
   dirette:     _ico('<path d="M3 13h3l3-7 4 14 3-9 2 4h3"/>'),
   calendario:  _ico('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M8 14h3"/>'),
   settimana:   _ico('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M7 14h2"/><path d="M11 14h2"/><path d="M15 14h2"/><path d="M7 17.5h2"/><path d="M11 17.5h2"/>'),
+  personalizza: _ico('<path d="M12 3a9 9 0 1 0 0 18c1.3 0 2-.9 2-1.9 0-1.3-1-1.6-1-2.7 0-1 .8-1.8 1.9-1.8H17a4 4 0 0 0 4-4c0-4.2-4-7.6-9-7.6Z"/><circle cx="7.6" cy="11.6" r=".9"/><circle cx="10.4" cy="7.6" r=".9"/><circle cx="15.2" cy="7.8" r=".9"/>'),
   sottoscrizione: _ico('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 14.5h4"/>'),
   pagina:      _ico('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.8 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.8-1.7"/>'),
   donazioni:   _ico('<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'),
@@ -5144,6 +5151,7 @@ const DESC = {
   telegram: ['Il tuo bot nel tuo gruppo: avvisi, comandi, compleanni, membri e il rapporto della serata in privato.', 'Your bot in your group: alerts, commands, birthdays, members and the night report in private.', 'Tu bot en tu grupo: avisos, comandos, cumpleaños, miembros y el informe de la noche en privado.'],
   ruoli: ['I ruoli del tuo server dati da quello che succede su Twitch: chi ti segue, chi è abbonato, chi c’è sempre.', 'Your server’s roles given by what happens on Twitch: who follows you, who is subscribed, who is always there.', 'Los roles de tu servidor dados por lo que pasa en Twitch: quién te sigue, quién está suscrito, quién está siempre.'],
   dirette: ['Il rapporto di ogni diretta: spettatori, chat, follower, presenti, clip e donazioni. E dove riceverlo.', 'The report of every stream: viewers, chat, followers, attendees, clips and donations. And where to get it.', 'El informe de cada directo: espectadores, chat, seguidores, presentes, clips y donaciones. Y dónde recibirlo.'],
+  personalizza: ['Il pannello come lo vuoi tu: tema, lingua, colori, caratteri, menù e dove sta.', 'The panel the way you want it: theme, language, colours, typefaces, menu and where it sits.', 'El panel como tú lo quieres: tema, idioma, colores, tipografías, menú y dónde está.'],
   sottoscrizione: ['Cosa hai attivo, cosa comprende e come annullare.', 'What you have active, what it includes and how to cancel.', 'Qué tienes activo, qué incluye y cómo cancelar.'],
   pagina: ['La tua pagina pubblica con tutti i link, su socialbot.live/u/iltuonome.', 'Your public page with all your links, at socialbot.live/u/yourname.', 'Tu página pública con todos tus enlaces, en socialbot.live/u/tunombre.'],
   admin: ['Gestione streamer e anima condivisa del bot.', 'Streamer management and the bot’s shared soul.', 'Gestión de streamers y el alma compartida del bot.'],
@@ -5287,6 +5295,8 @@ const GUIDE = {
     come: [['Cambia titolo e categoria e salva: si aggiornano subito su Twitch e su Kick, se li hai collegati.', 'Change title and category and save: they update right away on Twitch and Kick, if you linked them.', 'Cambia título y categoría y guarda: se actualizan al instante en Twitch y en Kick, si los has conectado.', '#regia-titolo'], ['Usa le azioni rapide durante la live: clip, marker, pubblicità, raid.', 'Use the quick actions during the stream: clips, markers, ads, raids.', 'Usa las acciones rápidas durante el directo: clips, marcadores, anuncios, raids.', '#regia-clip'], ['Tieni il pannello aperto su un secondo schermo mentre streami.', 'Keep the panel open on a second screen while you stream.', 'Ten el panel abierto en una segunda pantalla mientras emites.', '']] },
   dirette: { serve: ['Rileggere com’è andata ogni diretta e scegliere dove ricevere il rapporto.', 'Look back at how each stream went and choose where to get the report.', 'Repasar cómo fue cada directo y elegir dónde recibir el informe.'],
     come: [['Ogni diretta finita è una carta: durata, spettatori, chat, follower, presenti, clip e donazioni.', 'Every finished stream is a card: duration, viewers, chat, followers, attendees, clips and donations.', 'Cada directo terminado es una tarjeta: duración, espectadores, chat, seguidores, presentes, clips y donaciones.', '#lista-rapporti'], ['Accendi Telegram se hai collegato la chat privata: il rapporto arriva lì appena chiudi.', 'Turn on Telegram if you linked the private chat: the report lands there as soon as you end.', 'Enciende Telegram si vinculaste el chat privado: el informe llega allí en cuanto cierras.', '#chk-rap-telegram'], ['Per la mail scrivi l’indirizzo e conferma dal messaggio che ti arriva.', 'For email, write the address and confirm from the message you get.', 'Para el correo escribe la dirección y confirma desde el mensaje que te llega.', '#inp-posta']] },
+  personalizza: { serve: ['Vestire e sistemare il pannello come piace a te. Le scelte sono tue, non del canale, e ti seguono su ogni dispositivo.', 'Dress and arrange the panel the way you like. The choices are yours, not the channel’s, and follow you on every device.', 'Vestir y ordenar el panel como te guste. Las elecciones son tuyas, no del canal, y te siguen en cada dispositivo.'],
+    come: [['In «Tema e lingua» scegli chiaro, scuro o quello del dispositivo, e la lingua del pannello.', 'In “Theme and language” pick light, dark or the device’s, and the panel’s language.', 'En «Tema e idioma» eliges claro, oscuro o el del dispositivo, y el idioma del panel.', '#carta-generali'], ['In «Aspetto su misura» parti da una veste pronta o scegli colori, caratteri, grandezza e forma.', 'In “Your own look” start from a ready-made look or choose colours, typefaces, size and shape.', 'En «Aspecto a medida» parte de un aspecto ya hecho o elige colores, tipografías, tamaño y forma.', '#carta-aspetto'], ['In «Menù su misura» metti in cima le tue pagine, nascondi le altre, scegli l’ordine e da che lato sta il menù.', 'In “Your own menu” put your pages at the top, hide the others, pick the order and which side the menu sits on.', 'En «Menú a medida» pon tus páginas arriba, oculta las demás, elige el orden y de qué lado está el menú.', '#carta-menu']] },
   sottoscrizione: { serve: ['Vedere cosa hai attivo, cosa comprende, quanto paghi e come cambiarlo o annullarlo.', 'See what you have active, what it includes, what you pay and how to change or cancel it.', 'Ver qué tienes activo, qué incluye, cuánto pagas y cómo cambiarlo o cancelarlo.'],
     come: [['In cima leggi il piano attuale e, se è una prova, fino a quando dura.', 'At the top you read your current plan and, if it’s a trial, how long it lasts.', 'Arriba lees tu plan actual y, si es una prueba, hasta cuándo dura.', '#sott-box'], ['Sotto vedi quali funzioni sono accese e quali no, senza gerghi.', 'Below you see which features are on and which aren’t, no jargon.', 'Debajo ves qué funciones están activas y cuáles no, sin jerga.', ''], ['Sotto «Puoi aggiungere» spunti gli extra che ti mancano: il totale è quello che paghi in più, e il tasto li attiva.', 'Under “You can add” you tick the extras you are missing: the total is what you pay extra, and the button switches them on.', 'Bajo «Puedes añadir» marcas los extras que te faltan: el total es lo que pagas de más, y el botón los activa.', ''], ['Da «Gestisci» apri il portale dei pagamenti: fatture, carta e disdetta.', 'From “Manage” you open the payment portal: invoices, card and cancellation.', 'Desde «Gestionar» abres el portal de pagos: facturas, tarjeta y cancelación.', '']] },
   pagina: { serve: ['Avere una pagina pubblica con tutti i tuoi link (Twitch, social, Discord, donazioni) da mettere nella bio di Instagram o TikTok.', 'Have a public page with all your links (Twitch, socials, Discord, donations) to put in your Instagram or TikTok bio.', 'Tener una página pública con todos tus enlaces (Twitch, redes, Discord, donaciones) para poner en la bio de Instagram o TikTok.'],
@@ -5860,7 +5870,7 @@ function disegnaMenuMisura() {
       return g.schede.length === 1 ? voci : `<optgroup label="${esc(tGruppo(g.id, g.nome))}">${voci}</optgroup>`;
     }).join('');
   const s = menuScelte();
-  const diSerie = !s.mie.length && !s.nomeMie && !s.nascoste.length && !s.gruppi.length && !Object.keys(s.ordine).length && !s.barra.length && s.modo === 'uno' && s.righe === 'comode' && s.apre === 'stato';
+  const diSerie = !s.mie.length && !s.nomeMie && !s.nascoste.length && !s.gruppi.length && !Object.keys(s.ordine).length && !s.barra.length && s.modo === 'uno' && s.righe === 'comode' && s.lato === 'sinistra' && s.apre === 'stato';
 
   box.innerHTML = `
     <h3>${esc(menuNomeMie())}</h3>
@@ -5935,7 +5945,7 @@ function menuMisuraCambio(ev) {
 }
 
 function apriMenuMisura(idCarta = 'carta-menu') {
-  vaiAScheda('account');
+  vaiAScheda('personalizza');
   let giri = 0, mollato = false;
   const molla = () => { mollato = true; };
   const ascolti = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
@@ -6032,6 +6042,38 @@ const _aspNomi = () => ({
     moto: { serie: L('Di serie (decide il dispositivo)', 'Standard (the device decides)', 'De serie (decide el dispositivo)'), leggero: L('Leggero', 'Light', 'Ligero'), pieno: L('Pieno', 'Full', 'Completo') },
   },
 });
+
+function disegnaGenerali() {
+  const box = document.getElementById('generali-misura');
+  if (!box) return;
+  const att = document.activeElement, chi = att && box.contains(att) ? att.id : '';
+  const op = (v, attuale, testo) => `<option value="${v}"${v === attuale ? ' selected' : ''}>${esc(testo)}</option>`;
+  const nomeLingua = { it: 'Italiano', en: 'English', es: 'Español' };
+  const m = menuMio();
+  box.innerHTML = `<div class="mm-campi">
+      <div><label class="campo" for="gen-tema">${L('Il tema', 'The theme', 'El tema')}</label>
+        <select id="gen-tema">${op('auto', TEMA, L('Come il dispositivo', 'Same as the device', 'Como el dispositivo'))}${op('light', TEMA, L('Chiaro', 'Light', 'Claro'))}${op('dark', TEMA, L('Scuro', 'Dark', 'Oscuro'))}</select></div>
+      <div><label class="campo" for="gen-lingua">${L('La lingua del pannello', 'The panel’s language', 'El idioma del panel')}</label>
+        <select id="gen-lingua">${LINGUE.map((l) => op(l, LINGUA, nomeLingua[l] || l.toUpperCase())).join('')}</select></div>
+      <div><label class="campo" for="gen-lato">${L('Il menù, sul computer', 'The menu, on a computer', 'El menú, en el ordenador')}</label>
+        <select id="gen-lato">${op('sinistra', m.lato, L('A sinistra', 'On the left', 'A la izquierda'))}${op('destra', m.lato, L('A destra', 'On the right', 'A la derecha'))}</select></div>
+    </div>
+    <p class="suggerimento">${L('«Come il dispositivo» segue il chiaro o lo scuro del telefono o del computer, anche mentre cambia. Il tasto col sole e la luna, in alto, passa fra chiaro e scuro. La lingua del bot in chat è un’altra cosa: sta nelle preferenze del canale. Sul telefono il menù si apre sempre da destra, dov’è il pollice.', '“Same as the device” follows your phone’s or computer’s light or dark, even as it changes. The sun and moon button at the top switches between light and dark. The bot’s language in chat is something else: it lives in the channel preferences. On a phone the menu always opens from the right, where your thumb is.', '«Como el dispositivo» sigue el claro o el oscuro del móvil o del ordenador, también mientras cambia. El botón del sol y la luna, arriba, pasa entre claro y oscuro. El idioma del bot en el chat es otra cosa: está en las preferencias del canal. En el móvil el menú se abre siempre desde la derecha, donde está el pulgar.')}</p>`;
+  if (chi) document.getElementById(chi)?.focus({ preventScroll: true });
+}
+
+function generaliCambio(ev) {
+  const t = ev.target;
+  if (!t?.closest?.('#generali-misura')) return;
+  if (t.id === 'gen-tema') {
+    TEMA = ['light', 'dark'].includes(t.value) ? t.value : 'auto';
+    try { if (TEMA === 'auto') localStorage.removeItem('tema'); else localStorage.setItem('tema', TEMA); } catch (e) {  }
+    applicaTema(); disegnaAspetto();
+    return;
+  }
+  if (t.id === 'gen-lingua') { cambiaLingua(t.value); return; }
+  if (t.id === 'gen-lato') menuCambia((s) => { s.lato = t.value; });
+}
 
 function disegnaAspetto() {
   const box = document.getElementById('aspetto-misura');
@@ -6810,6 +6852,7 @@ function vistaPiattaforma() {
   return `
     ${pannelloStato()}
     ${pannelloAccount()}
+    ${pannelloPersonalizza()}
     ${pannelloSottoscrizione()}
     ${pannelloPersonalita()}
     ${pannelloConoscenza()}
@@ -12774,16 +12817,6 @@ function pannelloAccount() {
       <p>${L('Come parla e come conta il tempo il tuo canale: la lingua del bot in chat, le date, le ore e da dove prende le prossime dirette. «Di base» segue il tuo canale da solo.', 'How your channel speaks and counts time: the bot’s language in chat, dates, times and where it takes the next streams from. «Default» follows your channel by itself.', 'Cómo habla y cuenta el tiempo tu canal: el idioma del bot en el chat, las fechas, las horas y de dónde toma los próximos directos. «Por defecto» sigue a tu canal solo.')}</p>
       <div id="acc-preferenze" class="spazio-sopra" aria-busy="true">${attesaHtml('div')}</div>
     </div>`}
-    <div class="carta" id="carta-menu">
-      <h2>${_hIco(ICO.stella)}${L('Menù su misura', 'Your own menu', 'Menú a medida')}</h2>
-      <p>${L('Il menù è tuo: metti in cima le pagine che usi, togli di mezzo quelle che non ti servono, cambia l’ordine. Ogni scelta vale subito e ti segue su ogni dispositivo, anche quando gestisci il canale di un altro.', 'The menu is yours: put the pages you use at the top, move the ones you don’t need out of the way, change the order. Every choice applies at once and follows you on every device, even when you manage someone else’s channel.', 'El menú es tuyo: pon arriba las páginas que usas, aparta las que no necesitas, cambia el orden. Cada elección vale al momento y te sigue en todos tus dispositivos, también cuando gestionas el canal de otra persona.')}</p>
-      <div id="menu-misura" class="spazio-sopra"></div>
-    </div>
-    <div class="carta" id="carta-aspetto">
-      <h2>${_hIco(ICO.tavolozza)}${L('Aspetto su misura', 'Your own look', 'Aspecto a medida')}</h2>
-      <p>${L('Vesti SocialBot come vuoi: colori, caratteri, grandezza, angoli, ombre. Parti da una veste pronta o scegli tutto tu. Ogni scelta vale subito, è solo tua e ti segue su ogni dispositivo, anche quando gestisci il canale di un altro.', 'Dress SocialBot the way you like: colours, typefaces, size, corners, shadows. Start from a ready-made look or choose everything yourself. Every choice applies at once, is yours alone and follows you on every device, even when you manage someone else’s channel.', 'Viste SocialBot como quieras: colores, tipografías, tamaño, esquinas, sombras. Parte de un aspecto ya hecho o elígelo todo tú. Cada elección vale al instante, es solo tuya y te sigue en cada dispositivo, también cuando gestionas el canal de otra persona.')}</p>
-      <div id="aspetto-misura" class="spazio-sopra"></div>
-    </div>
     <div class="carta">
       <h2>${_hIco(ICO.cestino)}${L('Andarsene', 'Leaving', 'Marcharse')}</h2>
       <p>${L('Se te ne vai', 'If you leave', 'Si te vas')} <strong class="primo-piano">${L('non resta niente di tuo', 'nothing of yours stays', 'no queda nada tuyo')}</strong>: ${L('comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati, collegamenti ai tuoi account. Il bot esce dal tuo canale.', 'commands, modules, effects, points, watch time, chat memory, link page, uploaded files, connections to your accounts. The bot leaves your channel.', 'comandos, módulos, efectos, puntos, horas vistas, memoria del chat, página de enlaces, archivos subidos, conexiones con tus cuentas. El bot sale de tu canal.')}</p>
@@ -29984,6 +30017,26 @@ async function caricaDirette() {
   }
 }
 
+function pannelloPersonalizza() {
+  return pannello('personalizza', `
+    <div class="carta" id="carta-generali">
+      <h2>${_hIco(ICO.sliders)}${L('Tema e lingua', 'Theme and language', 'Tema e idioma')}</h2>
+      <p>${L('Come si presenta il pannello appena lo apri. Valgono per te, su questo dispositivo e sugli altri.', 'How the panel looks as soon as you open it. They apply to you, on this device and the others.', 'Cómo se presenta el panel nada más abrirlo. Valen para ti, en este dispositivo y en los demás.')}</p>
+      <div id="generali-misura" class="spazio-sopra"></div>
+    </div>
+    <div class="carta" id="carta-menu">
+      <h2>${_hIco(ICO.stella)}${L('Menù su misura', 'Your own menu', 'Menú a medida')}</h2>
+      <p>${L('Il menù è tuo: metti in cima le pagine che usi, togli di mezzo quelle che non ti servono, cambia l’ordine. Ogni scelta vale subito e ti segue su ogni dispositivo, anche quando gestisci il canale di un altro.', 'The menu is yours: put the pages you use at the top, move the ones you don’t need out of the way, change the order. Every choice applies at once and follows you on every device, even when you manage someone else’s channel.', 'El menú es tuyo: pon arriba las páginas que usas, aparta las que no necesitas, cambia el orden. Cada elección vale al momento y te sigue en todos tus dispositivos, también cuando gestionas el canal de otra persona.')}</p>
+      <div id="menu-misura" class="spazio-sopra"></div>
+    </div>
+    <div class="carta" id="carta-aspetto">
+      <h2>${_hIco(ICO.tavolozza)}${L('Aspetto su misura', 'Your own look', 'Aspecto a medida')}</h2>
+      <p>${L('Vesti SocialBot come vuoi: colori, caratteri, grandezza, angoli, ombre. Parti da una veste pronta o scegli tutto tu. Ogni scelta vale subito, è solo tua e ti segue su ogni dispositivo, anche quando gestisci il canale di un altro.', 'Dress SocialBot the way you like: colours, typefaces, size, corners, shadows. Start from a ready-made look or choose everything yourself. Every choice applies at once, is yours alone and follows you on every device, even when you manage someone else’s channel.', 'Viste SocialBot como quieras: colores, tipografías, tamaño, esquinas, sombras. Parte de un aspecto ya hecho o elígelo todo tú. Cada elección vale al instante, es solo tuya y te sigue en cada dispositivo, también cuando gestionas el canal de otra persona.')}</p>
+      <div id="aspetto-misura" class="spazio-sopra"></div>
+    </div>
+  `);
+}
+
 function pannelloSottoscrizione() {
   return pannello('sottoscrizione', `
     <div class="carta">
@@ -39973,7 +40026,8 @@ async function conErrore(fn) {
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
   if (id === 'stato') caricaAdesso();
-  if (id === 'account') { caricaPasskey(); caricaSicurezza(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); caricaCollegamenti(); caricaPreferenze(); disegnaMenuMisura(); disegnaAspetto(); }
+  if (id === 'account') { caricaPasskey(); caricaSicurezza(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); caricaCollegamenti(); caricaPreferenze(); }
+  if (id === 'personalizza') { disegnaGenerali(); disegnaMenuMisura(); disegnaAspetto(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'promo') { collegaPromo(); caricaPromo(); }
   if (id === 'qr') avviaQr();
@@ -46056,6 +46110,7 @@ function initGuscio() {
   document.addEventListener('click', menuMisuraClic);
   document.addEventListener('change', menuMisuraCambio);
   document.addEventListener('click', aspettoClic);
+  document.addEventListener('change', generaliCambio);
   document.addEventListener('change', aspettoCambio);
   document.addEventListener('input', aspettoMentre);
   document.addEventListener('toggle', (ev) => { const g = ev.target?.closest?.('#menu-misura details[data-mm-grp]'); if (g) _mmGruppi.set(g.dataset.mmGrp, g.open); }, true);

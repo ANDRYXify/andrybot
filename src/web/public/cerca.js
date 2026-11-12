@@ -56,6 +56,7 @@
     telegram: 'telegram bot gruppo canale topic membri amici community compleanni rapporto privato verifica token destinazioni miembros cumpleaños cancello ingresso verifica captcha benvenuto antispam bot chi entra muto portiere guardia entrada bienvenida scudo shield escudo richiesta richieste join request solicitud prova check prueba guardiano guardian porta door puerta invito invite enlace regole rules normas primo piano sordina fissa fissato pin silenzioso first quiet pinned primer plano fijado',
     stato: 'stato home diretta live in onda adesso prossima ultima spettatori bot acceso spento permessi status estado directo',
     account: 'account piattaforme passkey moderatori mod installa app mail codici dati esporta scarica cancella andarsene kick youtube cuenta plataformas moderadores datos',
+    personalizza: 'personalizzazione personalizza aspetto veste colori colore tema chiaro scuro lingua carattere font grandezza testo grande angoli ombre menu menù lato destra sinistra posizione barra stella nascondi css preset neon retro personalization theme colours colors language look appearance personalización tema colores idioma aspecto',
     sottoscrizione: 'abbonamento subscription pagamento fattura rinnovo piano prezzo pacchetti costo carta suscripción pago precio',
     admin: 'admin operatore llm modello ecosistema vita di lia anima backup salute'
   };
