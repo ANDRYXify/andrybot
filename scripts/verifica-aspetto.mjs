@@ -10,6 +10,8 @@
 // LE PROMESSE:
 //   · senza scelte la radice e' pulita: nessuna variabile scritta, nessun
 //     foglio in piu';
+//   · con una veste addosso i clic restano clic (colore, casella, link);
+//   · ogni veste si legge almeno quanto quella di serie (testo 12);
 //   · il tasto nel piede del menu porta alla carta;
 //   · ogni veste pronta si dipinge e si legge: pagina, carta, testo e tasto
 //     pieno misurati sui colori veri; il tema dipinto segue il colore;
@@ -32,7 +34,7 @@
 //     sul computer.
 //
 // Uso: node scripts/verifica-aspetto.mjs [--foto <cartella>]
-//      --selftest serve i file rotti in quindici modi e pretende quindici rossi.
+//      --selftest serve i file rotti in diciotto modi e pretende diciotto rossi.
 import './_dati-usa-e-getta.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -62,9 +64,16 @@ const ROTTURE = [
   ['«Come il dispositivo» resta un tema fisso', 'app.js', "try { if (TEMA === 'auto') localStorage.removeItem('tema'); else localStorage.setItem('tema', TEMA); } catch (e) {  }", "TEMA = TEMA === 'auto' ? 'light' : TEMA; try { localStorage.setItem('tema', TEMA); } catch (e) {  }"],
   ['il menù a destra non sposta la lente', 'style.css', 'body.con-nav.menu-destra #cerca-lancia, body.con-nav.menu-destra #plancia-lancia { right: auto; left: calc(18px + env(safe-area-inset-left, 0px)); }', ''],
   ['il lato del menù non si applica', 'app.js', "document.body.classList.toggle('menu-destra', con && menuMio().lato === 'destra');", ''],
+  ['un colore scelto ridisegna la carta', 'app.js', "s[posto][t.dataset.asRuolo] = t.value; }, { carta: false }); aspettoNote(); return; }", "s[posto][t.dataset.asRuolo] = t.value; }); return; }"],
+  ['la veste si segna sulla radice con un nome che altri cercano', 'aspetto.js', "FIRMA = 'data-aspetto-firma'", "FIRMA = 'data-veste'"],
+  ['le superfici scure possono schiarirsi troppo', 'aspetto.js', 'const LATO = { scuro: 0.035, chiaro: 0.56 }', 'const LATO = { scuro: 0.11, chiaro: 0.56 }'],
   ['l\'uscita di sicurezza non vale nel pannello', 'app.js', 'SB_ASPETTO.dipingi(ASPETTO_FUGA ? {} : scelte,', 'SB_ASPETTO.dipingi(scelte,'],
 ];
 
+// Le soglie di lettura sono quelle del modulo, non una copia: misurate sulla
+// veste di serie (docs/ASPETTO.md, punto 8).
+await import('../src/web/public/aspetto.js');
+const LEGGE = globalThis.SB_ASPETTO.SOGLIE.testo;
 const br = await apriBrowser();
 if (!br) { console.log('Playwright non c\'e\': salto.'); process.exit(0); }
 
@@ -117,7 +126,7 @@ async function giro(rottura, dice) {
     const pienoFondo = esa(st(pieno).backgroundColor), pienoTesto = esa(st(pieno).color);
     return {
       scritte: A.NOMI.filter((n) => el.style.getPropertyValue(n) !== ''),
-      tema: el.getAttribute('data-theme'), veste: el.getAttribute('data-veste'), radice: el.style.fontSize,
+      tema: el.getAttribute('data-theme'), veste: el.getAttribute('data-aspetto-firma'), radice: el.style.fontSize,
       css: [...document.adoptedStyleSheets].map((f) => [...f.cssRules].map((r) => r.cssText).join(' ')).join(' ') + (document.getElementById('aspetto-css')?.textContent || ''),
       bg: el.style.getPropertyValue('--bg'), pagina, foglio, testo, pienoFondo, pienoTesto,
       scuro: pagina ? A.luce(pagina) < 0.18 : null,
@@ -144,7 +153,7 @@ async function giro(rottura, dice) {
     chiedi(await pg.evaluate(() => window.SB_APP.schedaAttiva === 'personalizza' && !!document.querySelector('#aspetto-misura .as-preset')), 'il tasto nel piede del menu porta alla carta «Aspetto su misura»');
     await carta(pg);
     const serie = await dipinto(pg);
-    chiedi(serie.cTesto >= 4.5 && serie.cPieno >= 4.5, `la veste di serie si legge (testo ${serie.cTesto.toFixed(1)}, tasto pieno ${serie.cPieno.toFixed(1)})`);
+    chiedi(serie.cTesto >= LEGGE && serie.cPieno >= 4.5, `la veste di serie si legge (testo ${serie.cTesto.toFixed(1)}, tasto pieno ${serie.cPieno.toFixed(1)})`);
     await foto(pg, 'serie');
 
     // Le vesti pronte, una per una, nel tema chiaro.
@@ -155,7 +164,7 @@ async function giro(rottura, dice) {
       const d = await dipinto(pg);
       const attesa = await pg.evaluate((x) => window.SB_ASPETTO.veste({ chiaro: { preset: x } }, 'chiaro'), p);
       if (d.bg !== attesa.vars['--bg'] || d.pagina !== attesa.vars['--bg'] || d.foglio !== attesa.vars['--surface']) male.push(`${p}: dipinto ${d.pagina}/${d.foglio}, atteso ${attesa.vars['--bg']}/${attesa.vars['--surface']}`);
-      else if (d.cTesto < 4.5 || d.cPieno < 4.5) male.push(`${p}: testo ${d.cTesto.toFixed(2)}, tasto pieno ${d.cPieno.toFixed(2)}`);
+      else if (d.cTesto < LEGGE || d.cPieno < 4.5) male.push(`${p}: testo ${d.cTesto.toFixed(2)}, tasto pieno ${d.cPieno.toFixed(2)}`);
       else if ((d.tema === 'dark') !== d.scuro) male.push(`${p}: pagina ${d.pagina} ma tema ${d.tema}`);
       else if (!(await pg.evaluate((x) => document.querySelector(`[data-as-preset="${x}"]`).getAttribute('aria-pressed') === 'true', p))) male.push(`${p}: non risulta scelta`);
       if (p === 'neon' || p === 'retro') await foto(pg, 'veste-' + p);
@@ -165,6 +174,26 @@ async function giro(rottura, dice) {
     const neon = await dipinto(pg);
     chiedi(neon.tema === 'dark' && neon.scuro === true, `una veste scura nel tema chiaro si dipinge scura (${neon.tema})`);
 
+    // Con una veste addosso i clic restano clic: il riquadro del colore apre il
+    // suo selettore, una casella si spunta, un link porta dove dice. La prima
+    // versione segnava la veste sulla radice con un nome che un altro pezzo del
+    // pannello cercava risalendo da ogni clic, e li annullava tutti.
+    await pg.evaluate(() => { window.__annullati = []; window.addEventListener('click', (e) => { if (e.defaultPrevented) window.__annullati.push(e.target.id || e.target.tagName); }); });
+    const clicVero = async (sel) => { const r = await (await pg.$(sel)).boundingBox(); await pg.mouse.click(r.x + r.width / 2, r.y + r.height / 2); };
+    await pg.evaluate(() => document.getElementById('as-col-tenue').scrollIntoView({ block: 'center' }));
+    await clicVero('#as-col-tenue');
+    await pg.keyboard.press('Escape').catch(() => {});
+    const casella = await pg.evaluate(() => {
+      const c = document.createElement('input'); c.type = 'checkbox'; c.id = 'prova-casella';
+      const a = document.createElement('a'); a.href = '#prova-link'; a.id = 'prova-link'; a.textContent = 'link';
+      const box = document.getElementById('aspetto-misura'); box.prepend(c, a); c.scrollIntoView({ block: 'center' }); return true;
+    });
+    await clicVero('#prova-casella');
+    await clicVero('#prova-link');
+    const clic = await pg.evaluate(() => ({ annullati: window.__annullati, spuntata: document.getElementById('prova-casella')?.checked, hash: location.hash }));
+    chiedi(casella && clic.annullati.length === 0 && clic.spuntata === true && clic.hash === '#prova-link', `con una veste addosso i clic restano clic: colore, casella, link (${JSON.stringify(clic)})`);
+    await pg.evaluate(() => { document.getElementById('prova-casella')?.remove(); document.getElementById('prova-link')?.remove(); history.replaceState(null, '', location.pathname + location.search); });
+
     // Un colore scelto apposta per non leggersi.
     await pg.click('[data-as-preset=""]');
     const carta0 = (await dipinto(pg)).foglio;
@@ -172,8 +201,16 @@ async function giro(rottura, dice) {
     await pg.dispatchEvent('#as-col-testo', 'change');
     await pg.waitForTimeout(80);
     const illeggibile = await dipinto(pg);
-    chiedi(illeggibile.cTesto >= 4.5, `un testo scelto del colore della carta si ritocca finche' si legge (contrasto ${illeggibile.cTesto.toFixed(2)})`);
+    chiedi(illeggibile.cTesto >= LEGGE, `un testo scelto del colore della carta si ritocca finche' si legge (contrasto ${illeggibile.cTesto.toFixed(2)})`);
     chiedi(await pg.evaluate(() => !!document.querySelector('#aspetto-misura .as-colore small.as-ritocco')), 'e la carta dice quale colore ha ritoccato');
+    // Safari manda «change» a ogni passo mentre si sceglie: il riquadro resta lo
+    // stesso, se no il selettore aperto resta attaccato a uno che non c'e' piu'.
+    const riquadro = await pg.$('#as-col-tenue');
+    for (const c of ['#123456', '#654321']) {
+      await pg.evaluate(([c]) => { const i = document.getElementById('as-col-tenue'); i.value = c; i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true })); }, [c]);
+    }
+    chiedi(await pg.evaluate((e) => e.isConnected && document.getElementById('as-col-tenue') === e, riquadro), 'scegliendo un colore il riquadro resta lo stesso, anche con un «change» a ogni passo');
+    await pg.click('[data-as-via="tenue"]');
     await pg.click('[data-as-via="testo"]');
     chiedi((await dipinto(pg)).scritte.length === 0, 'tolto il colore, la radice torna pulita');
 
@@ -325,7 +362,7 @@ async function giro(rottura, dice) {
     await t.dispatchEvent('#as-grandezza', 'change');
     await t.waitForTimeout(200);
     const tel = await dipinto(t);
-    chiedi(tel.cTesto >= 4.5 && (await larga(t)) <= 0, `sul telefono, a 130 %, la carta si legge e non allarga la pagina (${await larga(t)} px)`);
+    chiedi(tel.cTesto >= LEGGE && (await larga(t)) <= 0, `sul telefono, a 130 %, la carta si legge e non allarga la pagina (${await larga(t)} px)`);
     await foto(t, 'telefono-carta');
     await t.evaluate(() => window.SB_APP.vai('stato'));
     await t.waitForTimeout(400);

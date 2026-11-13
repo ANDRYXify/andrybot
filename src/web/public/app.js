@@ -6075,6 +6075,27 @@ function generaliCambio(ev) {
   if (t.id === 'gen-lato') menuCambia((s) => { s.lato = t.value; });
 }
 
+function _aspNota(r, s, v, posto) {
+  const tuo = s[posto][r], ritocco = v.corretti.includes(r);
+  const testo = ritocco ? L(`Hai scelto ${tuo}: uso ${v.ruoli[r]}, che si legge.`, `You chose ${tuo}: I use ${v.ruoli[r]}, which reads.`, `Has elegido ${tuo}: uso ${v.ruoli[r]}, que se lee.`)
+    : tuo ? L('Scelto da te', 'Chosen by you', 'Elegido por ti') : s[posto].preset ? L('Dalla veste pronta', 'From the ready-made look', 'Del aspecto ya hecho') : v.vestita ? L('Ricavato dagli altri', 'Derived from the others', 'Derivado de los demás') : L('Di serie', 'Standard', 'De serie');
+  return { testo, ritocco };
+}
+
+function aspettoNote() {
+  const s = aspettoScelte(), posto = aspettoPosto(), v = SB_ASPETTO.veste(s, posto);
+  for (const r of SB_ASPETTO.RUOLI) {
+    const riga = document.getElementById('as-col-' + r)?.closest('.as-colore');
+    if (!riga) continue;
+    const n = _aspNota(r, s, v, posto), nota = riga.querySelector('small'), via = riga.querySelector('[data-as-via]');
+    if (nota) { nota.textContent = n.testo; nota.className = n.ritocco ? 'as-ritocco' : ''; }
+    if (via) via.hidden = !s[posto][r];
+  }
+  document.querySelectorAll('#aspetto-misura [data-as-preset]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.asPreset === s[posto].preset && (b.dataset.asPreset !== '' || !v.vestita))));
+  const serie = document.getElementById('as-di-serie');
+  if (serie) serie.disabled = SB_ASPETTO.diSerie(s);
+}
+
 function disegnaAspetto() {
   const box = document.getElementById('aspetto-misura');
   if (!box || !window.SB_ASPETTO) return;
@@ -6092,13 +6113,11 @@ function disegnaAspetto() {
       <span class="as-preset-nome">${esc(N.preset[id] || id)}</span></button>`;
   };
   const colore = (r) => {
-    const tuo = mia[r], ritoccato = v.corretti.includes(r);
-    const nota = ritoccato ? L(`Hai scelto ${tuo}: uso ${v.ruoli[r]}, che si legge.`, `You chose ${tuo}: I use ${v.ruoli[r]}, which reads.`, `Has elegido ${tuo}: uso ${v.ruoli[r]}, que se lee.`)
-      : tuo ? L('Scelto da te', 'Chosen by you', 'Elegido por ti') : mia.preset ? L('Dalla veste pronta', 'From the ready-made look', 'Del aspecto ya hecho') : v.vestita ? L('Ricavato dagli altri', 'Derived from the others', 'Derivado de los demás') : L('Di serie', 'Standard', 'De serie');
+    const n = _aspNota(r, s, v, posto);
     return `<div class="as-colore">
-      <input type="color" id="as-col-${r}" data-as-ruolo="${r}" value="${esc(tuo || v.ruoli[r])}">
-      <label for="as-col-${r}">${esc(N.ruoli[r])}<small class="${ritoccato ? 'as-ritocco' : ''}">${esc(nota)}</small></label>
-      ${tuo ? `<button type="button" class="mm-tasto" data-as-via="${r}" title="${esc(L('Togli il tuo colore', 'Remove your colour', 'Quita tu color'))}" aria-label="${esc(L(`Togli il tuo colore: ${N.ruoli[r]}`, `Remove your colour: ${N.ruoli[r]}`, `Quita tu color: ${N.ruoli[r]}`))}">${_bIco(_mmVia)}</button>` : ''}
+      <input type="color" id="as-col-${r}" data-as-ruolo="${r}" value="${esc(mia[r] || v.ruoli[r])}">
+      <label for="as-col-${r}">${esc(N.ruoli[r])}<small class="${n.ritocco ? 'as-ritocco' : ''}">${esc(n.testo)}</small></label>
+      <button type="button" class="mm-tasto" data-as-via="${r}"${mia[r] ? '' : ' hidden'} title="${esc(L('Togli il tuo colore', 'Remove your colour', 'Quita tu color'))}" aria-label="${esc(L(`Togli il tuo colore: ${N.ruoli[r]}`, `Remove your colour: ${N.ruoli[r]}`, `Quita tu color: ${N.ruoli[r]}`))}">${_bIco(_mmVia)}</button>
     </div>`;
   };
   const scelta = (k) => `<div><label class="campo" for="as-${k}">${esc(N.manopole[k])}</label>
@@ -6197,7 +6216,7 @@ function aspettoCambio(ev) {
   const t = ev.target;
   if (!t?.closest?.('#aspetto-misura')) return;
   const posto = aspettoPosto();
-  if (t.dataset.asRuolo) { aspettoCambia((s) => { s[posto][t.dataset.asRuolo] = t.value; }); return; }
+  if (t.dataset.asRuolo) { aspettoCambia((s) => { s[posto][t.dataset.asRuolo] = t.value; }, { carta: false }); aspettoNote(); return; }
   if (t.dataset.asManopola) { aspettoCambia((s) => { s[t.dataset.asManopola] = t.value; }); return; }
   if (t.id === 'as-grandezza') aspettoCambia((s) => { s.grandezza = Number(t.value); });
 }
@@ -6206,7 +6225,7 @@ function aspettoMentre(ev) {
   const t = ev.target;
   if (!t?.closest?.('#aspetto-misura')) return;
   const posto = aspettoPosto();
-  if (t.dataset.asRuolo) { aspettoCambia((s) => { s[posto][t.dataset.asRuolo] = t.value; }, { salva: false, carta: false }); return; }
+  if (t.dataset.asRuolo) { aspettoCambia((s) => { s[posto][t.dataset.asRuolo] = t.value; }, { salva: false, carta: false }); aspettoNote(); return; }
   if (t.id === 'as-grandezza') {
     const dice = document.getElementById('as-grandezza-dice');
     if (dice) dice.textContent = `${t.value} %`;

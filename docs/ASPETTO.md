@@ -58,18 +58,29 @@ e sopra c'è la veste di chi usa il pannello.
    non resta mai accanto a uno scelto con cui non si legge. Un contratto conta
    i token di `tema.css`: uno nuovo che porta un colore deve essere derivato o
    dichiarato neutro, altrimenti è rosso.
-8. **Si legge per costruzione.** La carta e le superfici stanno dalla stessa
-   parte della pagina (tutte chiare o tutte scure), quindi un testo che si
-   legge su tutte esiste sempre. La parte ha un margine: scure fino a
-   luminosità 0.11, chiare da 0.26 in su. In mezzo non ci sta nessuno, perché
-   lì né il bianco né il nero reggono 4.5 sopra un velo d'evidenza (fino al
-   14% di colore sul fondo): una pagina di un grigio di mezzo si sposta fino
-   al margine. Poi ogni colore che porta una scritta si sposta di luminosità
-   quel tanto che basta: testo 7 (mai sotto 4.5), testo tenue 4.5, evidenza
-   4.5 sul fondo e sul suo velo, la scritta sopra l'evidenza 4.5, verde, rosso
-   e ambra 4.5 anche sul loro fondo, inchiostro 4.5 (in un punto è anche
-   scritta), la rampa dell'evidenza 3. Sono le soglie del cancello della
-   tavolozza, o più strette. La carta dice quale colore è stato ritoccato.
+8. **Si legge almeno quanto la veste di serie, per costruzione.** Le soglie
+   non sono il minimo di legge: sono misurate sulla veste di serie, che ha il
+   testo a 12.7–13.2 e il testo tenue a 5.3–6.2 su tutte le superfici. Quindi:
+   testo 12, testo tenue 6, evidenza 4.5 sul fondo e sul suo velo, la scritta
+   sopra l'evidenza 4.5, verde, rosso e ambra 4.5 anche sul loro fondo,
+   inchiostro 4.5 (in un punto è anche scritta), la rampa dell'evidenza 3.
+   Ogni colore che porta una scritta si sposta di luminosità quel tanto che
+   basta, e la carta dice quale ha ritoccato.
+
+   I margini delle superfici scendono dalle soglie, non si scelgono: la carta
+   e le superfici stanno tutte dalla stessa parte della pagina, e da quella
+   parte il testo a 12 deve essere raggiungibile. Il bianco arriva a 12 su
+   una luminosità fino a 1.05/12 − 0.05 ≈ 0.0375, il nero da 0.55 in su;
+   quindi scure fino a **0.035**, chiare da **0.56**. In mezzo non ci sta
+   nessuno: una pagina di un grigio di mezzo si sposta fino al margine.
+
+   **Com'era, e perché era sbagliato.** La prima versione aveva il margine
+   scuro a 0.11 e chiedeva il testo a 7 (mai sotto 4.5) e il tenue a 4.5, il
+   minimo. Su superfici a 0.07 nemmeno il bianco arriva a 7, e le vesti scure
+   pronte uscivano col testo a 8–9 e il tenue a 4.6: «nei temi standard così
+   come sono il contrasto è terribile». Le soglie erano state scelte, non
+   misurate su quello che c'era già.
+
 9. **Il resto della veste** vale per tutti e due i temi:
 
    | manopola | valori | cosa muove |
@@ -99,6 +110,17 @@ e sopra c'è la veste di chi usa il pannello.
     lo apre con la veste di fabbrica senza cancellare le scelte, e porta alla
     carta. Le pagine d'ingresso non prendono mai il CSS: non ci si chiude
     fuori.
+11b. **La veste non tocca i clic.** Il pannello segna sulla radice che c'è
+    una veste (per chi ridisegna al cambio di tema), con un nome che nessun
+    altro file cerca: `data-aspetto-firma`. La prima versione usava
+    `data-veste`, che l'Overlay Studio cerca risalendo da ogni clic per
+    trovare i suoi tasti: trovava la radice e annullava **tutti** i clic del
+    pannello, così il riquadro del colore non apriva il suo selettore (e una
+    casella non si spuntava, un link non portava). Un contratto vieta il nome
+    in ogni altro file servito, e il cancello fa clic veri con una veste
+    addosso. Scegliere un colore aggiorna solo la nota della sua riga: Safari
+    manda «change» a ogni passo, e ridisegnare la carta staccava il selettore
+    aperto dal riquadro.
 12. **Il primo disegno è già vestito.** Il pannello tiene nel browser le
     variabili già calcolate (`localStorage['aspetto']`), e `tema.js` le scrive
     prima che il foglio arrivi: niente lampo di fabbrica a ogni ricarica. Lì

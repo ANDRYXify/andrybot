@@ -41,6 +41,15 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-11-13
+
+- In Personalizzazione i colori si cambiano di nuovo: con una veste addosso i clic del pannello venivano annullati. Ora riquadri, caselle e link rispondono. [vai: personalizza]
+  en: In Personalization you can change colours again: with a look applied, clicks in the panel were cancelled. Swatches, checkboxes and links now respond.
+  es: En Personalización los colores se cambian de nuevo: con un aspecto puesto, los clics del panel se anulaban. Ahora muestras, casillas y enlaces responden.
+- Le vesti pronte ora si leggono almeno quanto il pannello di serie: testo e testo tenue più marcati, fondi scuri più scuri. [vai: personalizza]
+  en: Ready-made looks now read at least as well as the standard panel: stronger text and muted text, darker dark backgrounds.
+  es: Los aspectos ya hechos ahora se leen al menos como el panel de serie: texto y texto tenue más marcados, fondos oscuros más oscuros.
+
 ## 2026-11-12
 
 - Dall'app installata, chi non ha una passkey ora entra in un altro modo senza uscire dall'app, e sceglie lì la sua seconda prova. Prima il link portava su un altro sito. [vai: account]

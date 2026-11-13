@@ -74,9 +74,9 @@
   };
   const GRANDEZZA = { min: 85, max: 130, passo: 5, serie: 100 };
   const CSS_MAX = 6000;
-  const SOGLIE = { testo: 7, minimo: 4.5, rampa: 3 };
+  const SOGLIE = { testo: 12, tenue: 6, minimo: 4.5, rampa: 3 };
   const BIANCO = '#ffffff', NERO = '#000000', INCHIOSTRO_SCURO = '#150910';
-  const LATO = { scuro: 0.11, chiaro: 0.26 }, VELO = 0.14;
+  const LATO = { scuro: 0.035, chiaro: 0.56 }, VELO = 0.14;
 
   const oggetto = (x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
   const suo = (o, k) => typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k);
@@ -214,7 +214,7 @@
       return col;
     };
     const testo = leggibile(P.testo, fondi, SOGLIE.testo);
-    const tenue = leggibile(P.tenue, fondi, SOGLIE.minimo);
+    const tenue = leggibile(P.tenue, fondi, SOGLIE.tenue);
     const acc = colVelo(P.acc);
     const inchiostro = leggibile(s.inchiostro || mescola(scuro ? BIANCO : NERO, acc, scuro ? 0.06 : 0.09), fondi, SOGLIE.minimo);
     const vars = {
@@ -297,7 +297,7 @@
     return out;
   }
 
-  const CHIAVE = 'aspetto';
+  const CHIAVE = 'aspetto', FIRMA = 'data-aspetto-firma';
   function cifra(t) {
     let h = 5381;
     for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) >>> 0;
@@ -323,7 +323,7 @@
     for (const n of Object.keys(v.vars)) el.style.setProperty(n, v.vars[n]);
     el.setAttribute('data-theme', v.tema);
     const firma = Object.keys(v.vars).length ? v.tema + ':' + cifra(JSON.stringify(v.vars)) : '';
-    if (firma) el.setAttribute('data-veste', firma); else el.removeAttribute('data-veste');
+    if (firma) el.setAttribute(FIRMA, firma); else el.removeAttribute(FIRMA);
     el.style.fontSize = v.grandezza === GRANDEZZA.serie ? '' : v.grandezza + '%';
     const barre = document.querySelectorAll('meta[name="theme-color"]');
     for (let i = 0; i < barre.length; i++) {
@@ -343,7 +343,7 @@
   }
 
   const ASPETTO = {
-    PRESET, PILE, FABBRICA, TEMI, RUOLI, MANOPOLE, GRANDEZZA, CSS_MAX, SOGLIE, NOMI, CHIAVE,
+    PRESET, PILE, FABBRICA, TEMI, RUOLI, MANOPOLE, GRANDEZZA, CSS_MAX, SOGLIE, LATO, NOMI, CHIAVE, FIRMA,
     pulisci, diSerie, veste, copia, cssSicuro, contrasto, luce, mescola, ruoliDi, dipingi, conserva,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = ASPETTO;

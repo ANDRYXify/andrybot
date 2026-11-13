@@ -11,7 +11,7 @@
 // nessun altro sito.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
@@ -36,8 +36,8 @@ function siLegge(v, dove) {
   assert.ok(lato.every((s) => s === lato[0]), `${dove}: pagina, carta e superfici stanno dalla stessa parte`);
   assert.equal(v.tema, lato[0] ? 'dark' : 'light', `${dove}: il tema dipinto lo decide il colore`);
   const chiedi = (nome, c, su, soglia) => assert.ok(peggiore(c, su) >= soglia - 1e-9, `${dove}: ${nome} ${c} a ${peggiore(c, su).toFixed(2)} (minimo ${soglia})`);
-  chiedi('il testo', x['--testo'], f, 4.5);
-  chiedi('il testo tenue', x['--testo-2'], f, 4.5);
+  chiedi('il testo', x['--testo'], f, A.SOGLIE.testo);
+  chiedi('il testo tenue', x['--testo-2'], f, A.SOGLIE.tenue);
   chiedi('l\'evidenza', x['--acc'], f, 4.5);
   // l'evidenza si scrive anche sopra il suo velo (--acc-soft, --acc-tint): fino al 14% di se stessa su ogni fondo
   chiedi('l\'evidenza sul suo velo', x['--acc'], f.map((c) => A.mescola(c, x['--acc'], 0.14)).concat(x['--acc-soft']), 4.5);
@@ -123,6 +123,35 @@ test('una veste e\' completa: ogni colore della radice e\' derivato, o dichiarat
   for (const nome of Object.keys(NEUTRI)) assert.ok(!(nome in veste), `${nome} e' dichiarato neutro ma la veste lo scrive`);
   for (const nome of Object.keys(veste)) assert.ok(A.NOMI.includes(nome), `${nome} si scrive ma non si saprebbe togliere`);
   for (const nome of A.NOMI) assert.ok(new RegExp(`${nome}\\s*:`).test(TEMA_CSS), `${nome} non e' un token di tema.css: la manopola sarebbe finta`);
+});
+
+test('le soglie sono quelle della veste di serie, misurate', () => {
+  // «nei temi standard cosi' come sono il contrasto e' terribile»: le vesti
+  // scure pronte avevano il testo a 8-9 e il tenue a 4.6, la veste di serie ha
+  // 12.7-13.2 e 5.3-6.2. Una veste si legge almeno quanto quella di serie.
+  const fab = (t, token) => Math.min(...['bg', 'surface', 'surface-2-tinta', 'surface-3-tinta'].map((f) => A.contrasto(TAVOLOZZA[t][token], TAVOLOZZA[t][f])));
+  assert.ok(A.SOGLIE.testo >= 12 && A.SOGLIE.testo <= Math.min(fab('chiaro', 'testo'), fab('scuro', 'testo')), `testo ${A.SOGLIE.testo}: come la veste di serie`);
+  assert.ok(A.SOGLIE.tenue >= Math.min(fab('chiaro', 'testo-2'), fab('scuro', 'testo-2')), `tenue ${A.SOGLIE.tenue}: almeno la veste di serie`);
+  // I margini delle superfici scendono dalle soglie: con il bianco (o il nero)
+  // la soglia del testo deve essere raggiungibile su ogni superficie.
+  assert.ok(1.05 / (A.LATO.scuro + 0.05) >= A.SOGLIE.testo, `superfici scure fino a ${A.LATO.scuro}: il bianco ci arriva a ${A.SOGLIE.testo}`);
+  assert.ok((A.LATO.chiaro + 0.05) / 0.05 >= A.SOGLIE.testo, `superfici chiare da ${A.LATO.chiaro}: il nero ci arriva a ${A.SOGLIE.testo}`);
+});
+
+test('la veste si segna sulla radice con un nome che nessun altro cerca', () => {
+  // Un attributo sulla radice lo trova chiunque risalga con closest(): la prima
+  // versione usava data-veste, che l'Overlay Studio cerca da ogni clic, e il
+  // pannello annullava tutti i clic. Qui si leggono tutti i file serviti.
+  const dir = join(RAD, 'src/web/public');
+  const nome = A.FIRMA.replace(/^data-/, '');
+  assert.equal(A.FIRMA, 'data-aspetto-firma');
+  for (const f of readdirSync(dir).filter((x) => /\.(js|css|html)$/.test(x))) {
+    const testo = readFileSync(join(dir, f), 'utf8');
+    if (f === 'aspetto.js') continue;
+    const usi = (testo.match(new RegExp(A.FIRMA + '|' + nome.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), 'g')) || []).length;
+    if (f === 'disegno-pannello.js') assert.equal(usi, 1, 'disegno-pannello la guarda e basta');
+    else assert.equal(usi, 0, `${f} usa ${A.FIRMA}`);
+  }
 });
 
 test('ogni preset si legge, in tutti e due i temi', () => {
