@@ -220,6 +220,12 @@ const tocca = async (p, x, y) => {
 const compraELancia = async (p) => { const b = p.locator('[data-compra-lancia]'); if (await b.count() && await b.isVisible()) await b.click(); };
 // una fase che si rompe e' una promessa che non tiene, non un cancello che si ferma
 const fase = async (nome, f) => { try { await f(); } catch (e) { dice(false, `${nome}: ${String(e?.message || e).split('\n')[0]}`); } };
+// I numeri li scrive la pagina col formato della sua lingua (Intl, data-lingua
+// di #cp): le regole cambiano tra versioni del browser (da CLDR 48 l'italiano
+// scrive «1920», non «1.920»). Li si chiede allo stesso browser, con la stessa
+// lingua, non li si scrive qui.
+const cifre = (p, n) => p.evaluate((v) => new Intl.NumberFormat(document.getElementById('cp')?.getAttribute('data-lingua') || 'it').format(v), n);
+const quadroTesto = async (p, l, a) => (await cifre(p, l) + '×' + await cifre(p, a)).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const centro = (p, sel) => p.evaluate((s) => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; }, sel);
 
 try {
@@ -523,7 +529,7 @@ try {
   await p.locator('#cp-mira').focus();
   await p.keyboard.press('ArrowLeft');
   const c2 = await coord();
-  dice(c2.x === c1.x + 2 && c2.y === c1.y + 2 && / px su 1\.920×1\.080/.test(c2.t), `ogni tocco del ritocco e ogni freccia: un pixel del quadro (${c1.x}, ${c1.y} → ${c2.x}, ${c2.y}; «${c2.t}»)`);
+  dice(c2.x === c1.x + 2 && c2.y === c1.y + 2 && new RegExp(` px su ${await quadroTesto(p, 1920, 1080)}`).test(c2.t), `ogni tocco del ritocco e ogni freccia: un pixel del quadro (${c1.x}, ${c1.y} → ${c2.x}, ${c2.y}; «${c2.t}»)`);
   const mi = await centro(p, '.cp-mirino'), st2 = await p.locator('#cp-mira').boundingBox();
   dice(mi && Math.abs(mi.x - (st2.x + st2.width * c2.x / 1920)) < 0.5 && Math.abs(mi.y - (st2.y + st2.height * c2.y / 1080)) < 0.5, 'e il mirino sta su quel pixel');
   await p.fill('#cp-nome', 'Marta');
@@ -547,7 +553,7 @@ try {
     dice(pl && Math.abs(pl.width / pl.height - 1080 / 1920) < 0.01, `un quadro verticale: la pagina prende le sue proporzioni (${pl ? (pl.width / pl.height).toFixed(4) : '-'})`);
     await p.locator('.cp-voce').first().click();
     await tocca(p, 50, 50);
-    dice(/X 540 · Y 960 px su 1\.080×1\.920/.test(await p.locator('#cp-coord').textContent()), 'e conta i pixel del suo quadro');
+    dice(new RegExp(`X 540 · Y 960 px su ${await quadroTesto(p, 1080, 1920)}`).test(await p.locator('#cp-coord').textContent()), 'e conta i pixel del suo quadro');
     streamers.setSettings(LOGIN, { ...s0, colpi: { ...s0.colpi, chat: { attivo: true, x: 33.33, y: 66.67 } } });
     await daCapo();
     await p.locator('.cp-voce').first().click();
