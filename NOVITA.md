@@ -41,6 +41,12 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-11-23
+
+- Gli aggiornamenti del bot ora arrivano da soli, entro un quarto d'ora, e mai durante una diretta: il server aspetta che finisca.
+  en: Bot updates now arrive by themselves, within a quarter of an hour, and never during a stream: the server waits for it to end.
+  es: Las actualizaciones del bot ahora llegan solas, en menos de un cuarto de hora, y nunca durante un directo: el servidor espera a que termine.
+
 ## 2026-11-13
 
 - In Personalizzazione i colori si cambiano di nuovo: con una veste addosso i clic del pannello venivano annullati. Ora riquadri, caselle e link rispondono. [vai: personalizza]

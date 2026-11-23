@@ -37,6 +37,12 @@
 #      --subito      riavvia anche se qualcuno e' in diretta (emergenza)
 #  Variabile:
 #      ATTESA_MAX_MIN  quanto aspettare al massimo la fine delle dirette (di base 360)
+#
+#  DA SOLO. server/aggiorna-da-solo.sh installa un timer che lancia questo
+#  script ogni quarto d'ora (docs/AGGIORNARE.md, «Il server si aggiorna da
+#  solo»): mai con --subito o --salta-prove. AGGIORNA_DA_SOLO=0 in .env lo
+#  spegne. L'esito di ogni giro che ha fatto qualcosa va in data/aggiorna.json,
+#  e il pannello dell'amministratore lo mostra.
 # ============================================================
 set -euo pipefail
 
@@ -50,8 +56,55 @@ for a in "$@"; do
   esac
 done
 
-passo() { echo; echo "==== $* ===="; }
-muori() { echo; echo "FERMO: $*" >&2; exit 1; }
+PASSO_ORA="l'avvio"
+passo() { PASSO_ORA="$*"; echo; echo "==== $* ===="; }
+muori() { echo; echo "FERMO: $*" >&2; scrivi_esito fermo "$*"; exit 1; }
+
+# ---- L'ESITO SI SCRIVE, COMUNQUE FINISCA --------------------
+# Il giro che parte da solo non lo guarda nessuno: quello che ha fatto deve
+# restare scritto, e il pannello dell'amministratore lo legge (data/aggiorna.json).
+# Si scrive ogni giro che ha fatto qualcosa: «aggiornato», «tornato indietro»
+# col motivo, «aspetta una diretta», «fermo» col motivo. Il giro che non trova
+# niente di nuovo esce prima e non scrive niente. La prova a vuoto non scrive.
+# Un'uscita che nessuno aveva previsto (un comando rosso sotto set -e) la
+# scrive la trappola d'uscita: non c'e' un modo di finire senza esito.
+ESITO_FINALE=0
+json_testo() {
+  local t="$1"
+  t="${t//\\/\\\\}"; t="${t//\"/\\\"}"
+  t="$(printf '%s' "$t" | tr -d '\000-\037')"
+  printf '"%s"' "$t"
+}
+scrivi_esito() {   # esito motivo [in-corso]
+  [ "${PROVA:-0}" = "1" ] && return 0
+  [ -n "${RADICE:-}" ] || return 0
+  local esito="$1" motivo="${2:-}" dove tmp bot_da bot_a lia="null" come="a mano"
+  dove="$RADICE/data/aggiorna.json"
+  bot_da="${PRIMA:-$(git rev-parse HEAD 2>/dev/null || true)}"
+  bot_a="${BOT_A:-$(git rev-parse HEAD 2>/dev/null || true)}"
+  if [ "${SERVE_LIA:-0}" = "1" ]; then
+    lia="{\"da\":$(json_testo "${LIA_PRIMA:-}"),\"a\":$(json_testo "${LIA_A:-${LIA_PRIMA:-}}")}"
+  fi
+  [ "${AGGIORNA_GIRO_DA_SOLO:-0}" = "1" ] && come="da solo"
+  mkdir -p "$RADICE/data" 2>/dev/null || return 0
+  tmp="$dove.$$"
+  if printf '{"quando":%s,"come":%s,"esito":%s,"motivo":%s,"bot":{"da":%s,"a":%s},"cervello":%s}\n' \
+      "$(json_testo "$(date -u +%Y-%m-%dT%H:%M:%SZ)")" "$(json_testo "$come")" "$(json_testo "$esito")" "$(json_testo "$motivo")" \
+      "$(json_testo "$bot_da")" "$(json_testo "$bot_a")" "$lia" > "$tmp" 2>/dev/null; then
+    mv -f "$tmp" "$dove" 2>/dev/null || rm -f "$tmp"
+  else
+    rm -f "$tmp"
+  fi
+  [ "${3:-}" = "in-corso" ] || ESITO_FINALE=1
+  return 0
+}
+alla_fine() {
+  local codice="${ESITO_USCITA:-0}"
+  if [ "$codice" != "0" ] && [ "$ESITO_FINALE" != "1" ]; then
+    scrivi_esito fermo "lo script si è fermato durante «$PASSO_ORA» (uscita $codice): il racconto intero è nel giornale del servizio"
+  fi
+}
+trap 'ESITO_USCITA=$?; alla_fine' EXIT
 
 # CON PIPEFAIL, `comando | grep -q` e `comando | head` mentono. Chi legge esce
 # appena ha quello che gli basta, chi scrive riceve SIGPIPE, e la riga intera
@@ -65,6 +118,32 @@ prime() { local n="$1" righe=(); shift; mapfile -t righe < <("$@"); if (( ${#rig
 cd "$(dirname "$0")/.."
 RADICE="$(pwd)"
 [ -d .git ] || muori "qui non c'è un repository git ($RADICE)"
+
+# ---- 0. il giro da solo, e un giro alla volta ----------------
+# Il timer di server/aggiorna-da-solo.sh lancia lo script con
+# AGGIORNA_GIRO_DA_SOLO=1. Con AGGIORNA_DA_SOLO=0 in .env quel giro esce subito,
+# senza fare niente: e' l'interruttore. Un giro lanciato a mano non lo guarda.
+if [ "${AGGIORNA_GIRO_DA_SOLO:-0}" = "1" ]; then
+  INTERRUTTORE="$( { grep -E '^AGGIORNA_DA_SOLO=' .env 2>/dev/null || true; } | tail -1 | cut -d= -f2- | tr -d "\"' " )"
+  if [ "$INTERRUTTORE" = "0" ]; then
+    echo "aggiornamento da solo spento (AGGIORNA_DA_SOLO=0 in .env): non faccio niente."
+    exit 0
+  fi
+fi
+# Due giri insieme (il timer e uno a mano, o un timer mentre l'altro aspetta la
+# fine di una diretta) farebbero due merge e due costruzioni sullo stesso
+# repository. Un lucchetto solo, quello del servizio: chi lo trova preso esce.
+# Il servizio lo prende gia' lui (flock -n) e lo dice con AGGIORNA_HA_LUCCHETTO;
+# chi riparte con le istruzioni nuove (4b) se lo porta dietro.
+LUCCHETTO="${AGGIORNA_LUCCHETTO_FILE:-/run/andrybot-aggiorna.lock}"
+if [ "${AGGIORNA_HA_LUCCHETTO:-0}" != "1" ] && command -v flock >/dev/null 2>&1 && touch "$LUCCHETTO" 2>/dev/null; then
+  exec 9>>"$LUCCHETTO"
+  if ! flock -n 9; then
+    echo "c'è già un aggiornamento in corso ($LUCCHETTO): non ne parto un secondo."
+    exit 0
+  fi
+  export AGGIORNA_HA_LUCCHETTO=1
+fi
 
 # LE ISTRUZIONI CHE GIRANO SONO QUELLE DEL CODICE CHE ARRIVA (vedi 4b).
 # Bash legge lo script mentre lo esegue, e `git merge` non lo riscrive: lo
@@ -107,6 +186,7 @@ git fetch --quiet origin
 RAMO="$(git rev-parse --abbrev-ref HEAD)"
 NUOVI="$(git rev-list --count HEAD..origin/"$RAMO" 2>/dev/null || echo 0)"
 PERSI="$(git rev-list --count origin/"$RAMO"..HEAD 2>/dev/null || echo 0)"
+BOT_A="$(git rev-parse "origin/$RAMO" 2>/dev/null || git rev-parse HEAD)"
 
 # ---- 2a. il cervello privato, PRIMA di decidere --------------
 # Il codice del cervello vive in un repository a parte (LIA_DIR, di solito la
@@ -143,6 +223,7 @@ if [ "$SERVE_LIA" = "1" ]; then
   LIA_RAMO="$(git -C "$LIA_DIR" rev-parse --abbrev-ref HEAD)"
   LIA_NUOVI="$(git -C "$LIA_DIR" rev-list --count HEAD..origin/"$LIA_RAMO" 2>/dev/null || echo 0)"
   LIA_PERSI="$(git -C "$LIA_DIR" rev-list --count origin/"$LIA_RAMO"..HEAD 2>/dev/null || echo 0)"
+  LIA_A="$(git -C "$LIA_DIR" rev-parse "origin/$LIA_RAMO" 2>/dev/null || git -C "$LIA_DIR" rev-parse HEAD)"
 fi
 
 # UNA FIRMA SOLA DI COSA GIRA: il bot, piu' il cervello quando serve. Si
@@ -171,10 +252,34 @@ firma_codice() {
 SEGNO="$RADICE/data/.deployato"
 GIRA="$(cat "$SEGNO" 2>/dev/null || echo '')"
 ATTESO="$(firma_codice)"
+# L'ULTIMO CONTROLLO. Il giro che non trova niente di nuovo non scrive l'esito
+# (resta quello dell'ultimo giro che ha fatto qualcosa), ma lascia l'ora: il
+# pannello cosi' dice anche che chi controlla e' vivo, e un «fermo» di tre
+# giorni fa si legge come vecchio. La prova a vuoto non lo lascia.
+if [ "$PROVA" != "1" ]; then
+  mkdir -p "$RADICE/data" && date -u +%Y-%m-%dT%H:%M:%SZ > "$RADICE/data/.aggiorna-controllato" 2>/dev/null || true
+fi
+# IL CODICE BOCCIATO NON SI RIPROVA DA SOLO. Un commit che non passa il
+# collaudo resta su GitHub finche' qualcuno non lo corregge: il giro da solo lo
+# riproverebbe ogni quarto d'ora, mezz'ora di collaudo ogni volta, per sempre.
+# Si ricorda la firma di cio' che e' stato bocciato (data/.bocciato); il giro da
+# solo la salta finche' non arriva qualcosa di diverso, quello a mano la riprova.
+BOCCIATO="$RADICE/data/.bocciato"
+firma_arrivo() {
+  local f="$BOT_A"
+  if [ "$SERVE_LIA" = "1" ]; then f="$f ${LIA_A:-}"; fi
+  echo "$f"
+}
 #
 # E «quello che gira» comprende la porta d'ingresso: un giro di prima puo'
 # averla lasciata con un Caddyfile vecchio (e' successo, vedi in cima), e senza
 # questo controllo ogni giro dopo direbbe «già aggiornato» per sempre.
+if [ -z "$RIPRESO" ] && [ "${AGGIORNA_GIRO_DA_SOLO:-0}" = "1" ] && { [ "$NUOVI" != "0" ] || [ "$LIA_NUOVI" != "0" ]; } \
+   && [ "$(cat "$BOCCIATO" 2>/dev/null || true)" = "$(firma_arrivo)" ]; then
+  echo "il codice in arrivo ha già fallito il collaudo: da solo non lo riprovo finché non arriva qualcosa di nuovo."
+  echo "Per riprovarlo adesso: cd $RADICE && bash server/aggiorna.sh"
+  exit 0
+fi
 if [ -n "$RIPRESO" ]; then
   echo "ripreso con le istruzioni nuove: da $(git rev-parse --short "$PRIMA") a $(git rev-parse --short HEAD)."
 elif [ "$NUOVI" = "0" ] && [ "$PERSI" = "0" ] && [ "$LIA_NUOVI" = "0" ] && [ "$LIA_PERSI" = "0" ]; then
@@ -260,6 +365,31 @@ if [ "$(sha256sum server/aggiorna.sh | cut -d' ' -f1)" != "$QUESTE_ISTRUZIONI" ]
 fi
 unset AGGIORNA_LIA_RIPRESO_DA
 
+# SI TORNA INDIETRO DAVVERO, non si stampa come si farebbe.
+#
+# Prima qui c'era solo il comando da copiare, e sembrava prudente: «decidi
+# tu». Ma lasciava il repository avanti e il container indietro — due cose
+# che non combaciano, e nessuno che lo dica. Il giro dopo sembrava tutto a
+# posto. Un aggiornamento che fallisce deve lasciare le cose COME STAVANO,
+# e «come stavano» comprende anche il repository. E l'esito resta scritto,
+# col motivo: il giro da solo non lo guarda nessuno.
+torna_indietro() {   # [motivo]
+  local motivo="${1:-il codice nuovo non passa il collaudo}"
+  echo
+  echo "Non aggiorno: $motivo. Quello che gira non è stato toccato."
+  echo "Rimetto il repository com'era ($(git rev-parse --short "$PRIMA")), così quello che c'è qui"
+  echo "è quello che gira davvero."
+  git reset --hard "$PRIMA" >/dev/null
+  if [ "$SERVE_LIA" = "1" ]; then git -C "$LIA_DIR" reset --hard "$LIA_PRIMA" >/dev/null; fi
+  echo "Per vedere cosa non andava, guarda il racconto qui sopra."
+  if [ "${2:-}" = "bocciato" ]; then
+    mkdir -p "$RADICE/data" && firma_arrivo > "$BOCCIATO"
+    echo "(il giro da solo non riproverà questo codice: aspetta il prossimo commit, o rilancia a mano.)"
+  fi
+  scrivi_esito "tornato indietro" "$motivo"
+  exit 1
+}
+
 # ---- 5. il collaudo, PRIMA di toccare quello che gira ------
 # La priorita' piu' bassa che c'e': il bot che gira passa sempre avanti.
 BASSA=(nice -n 19)
@@ -275,24 +405,6 @@ elif [ "$(cat "$COLLAUDATO" 2>/dev/null || true)" = "$FIRMA_CODICE" ]; then
 else
   passo "Collaudo (se è rosso, quello che gira non viene toccato)"
   command -v node >/dev/null || muori "serve Node sul server per il collaudo. Installalo, oppure usa --salta-prove."
-
-  # SI TORNA INDIETRO DAVVERO, non si stampa come si farebbe.
-  #
-  # Prima qui c'era solo il comando da copiare, e sembrava prudente: «decidi
-  # tu». Ma lasciava il repository avanti e il container indietro — due cose
-  # che non combaciano, e nessuno che lo dica. Il giro dopo sembrava tutto a
-  # posto. Un aggiornamento che fallisce deve lasciare le cose COME STAVANO,
-  # e «come stavano» comprende anche il repository.
-  torna_indietro() {
-    echo
-    echo "Il codice nuovo NON passa il collaudo. Quello che gira non è stato toccato."
-    echo "Rimetto il repository com'era ($(git rev-parse --short "$PRIMA")), così quello che c'è qui"
-    echo "è quello che gira davvero."
-    git reset --hard "$PRIMA" >/dev/null
-    [ "$SERVE_LIA" = "1" ] && git -C "$LIA_DIR" reset --hard "$LIA_PRIMA" >/dev/null
-    echo "Per vedere cosa non andava, guarda il collaudo qui sopra."
-    exit 1
-  }
 
   # I CONTROLLI COL BROWSER QUI SI SALTANO, E SI DICE UNA VOLTA SOLA.
   #
@@ -343,11 +455,11 @@ else
   SALTI_QUI="$(mktemp)"; SALTI_LIA="$(mktemp)"
 
   echo "(a priorita' bassa: il bot che gira non rallenta, il collaudo ci mette quello che serve)"
-  "${BASSA[@]}" npm ci --no-audit --no-fund --silent || { echo "installazione dipendenze fallita"; torna_indietro; }
-  "${BASSA[@]}" npm test --silent || torna_indietro
-  filtra "$SALTI_QUI" "${BASSA[@]}" npm run --silent cancelli || torna_indietro
+  "${BASSA[@]}" npm ci --no-audit --no-fund --silent || torna_indietro "le dipendenze del codice nuovo non si installano" bocciato
+  "${BASSA[@]}" npm test --silent || torna_indietro "il codice nuovo non passa le prove" bocciato
+  filtra "$SALTI_QUI" "${BASSA[@]}" npm run --silent cancelli || torna_indietro "il codice nuovo non passa i cancelli" bocciato
   if [ "$SERVE_LIA" = "1" ]; then
-    filtra "$SALTI_LIA" collaudo_cervello || torna_indietro
+    filtra "$SALTI_LIA" collaudo_cervello || torna_indietro "il cervello nuovo non passa il suo collaudo" bocciato
   fi
   N_SALTI=$(( $(salti_di "$SALTI_QUI") + $(salti_di "$SALTI_LIA") ))
   rm -f -- "${SALTI_QUI:?}" "${SALTI_LIA:?}"
@@ -357,6 +469,7 @@ else
     echo "Li ha già passati tutti chi ha pubblicato, prima della spinta. Qui hanno girato le prove e i cancelli senza browser."
   fi
   mkdir -p "$(dirname "$COLLAUDATO")" && echo "$FIRMA_CODICE" > "$COLLAUDATO"
+  rm -f "$BOCCIATO"
   echo "collaudo verde ✓"
 fi
 
@@ -375,7 +488,7 @@ fi
 # davvero). Costruendo prima, fra «nessuno in onda» e il riavvio passano pochi
 # secondi, e quei pochi secondi li chiude il segnale qui sotto.
 passo "Costruisco la versione nuova (quella che gira resta accesa)"
-docker compose build
+docker compose build || torna_indietro "la versione nuova non si costruisce (docker compose build)"
 
 # ---- 5c. il momento giusto: quando nessuno e' in diretta --------
 #
@@ -398,7 +511,7 @@ in_onda() {
   sed -n 's/.*"canali":\[\([^]]*\)\].*/\1/p' "$IN_ONDA_FILE" | tr -d '"' | tr ',' ' '
 }
 togli_segnale() { rm -f "$RIAVVIO_FILE"; }
-trap togli_segnale EXIT
+trap 'ESITO_USCITA=$?; togli_segnale; alla_fine' EXIT
 ATTESA_MAX_MIN="${ATTESA_MAX_MIN:-360}"
 ASPETTATI=0
 aspetta_dirette() {
@@ -407,6 +520,7 @@ aspetta_dirette() {
   echo "in diretta adesso: $(in_onda)"
   echo "la versione nuova e' collaudata e pronta: riavvio appena nessuno e' in onda."
   echo "controllo ogni minuto, al massimo $ATTESA_MAX_MIN minuti. Per non aspettare: --subito"
+  scrivi_esito "aspetta una diretta" "in diretta adesso: $(in_onda). La versione nuova è collaudata e pronta" in-corso
   while [ -n "$(in_onda)" ]; do
     if [ "$ASPETTATI" -ge "$ATTESA_MAX_MIN" ]; then
       echo
@@ -416,6 +530,7 @@ aspetta_dirette() {
       echo "(L'immagine nuova e' gia' costruita: un 'docker compose up -d' a mano metterebbe su quella.)"
       git reset --hard "$PRIMA" >/dev/null
       if [ "$SERVE_LIA" = "1" ]; then git -C "$LIA_DIR" reset --hard "$LIA_PRIMA" >/dev/null; fi
+      scrivi_esito "aspetta una diretta" "dopo $ATTESA_MAX_MIN minuti c'era ancora qualcuno in diretta ($(in_onda)): la versione nuova è collaudata, riprovo al giro dopo"
       exit 3
     fi
     sleep 60
@@ -527,6 +642,7 @@ if aspetta_sano; then
   # ricostruito E ha risposto sano. Scriverlo prima vorrebbe dire dichiarare
   # deployata una versione che magari non parte.
   mkdir -p "$(dirname "$SEGNO")" && firma_codice > "$SEGNO"
+  scrivi_esito aggiornato ""
   echo "aggiornato a $(git rev-parse --short HEAD) — se nei log c'è «chiavi degli overlay rinnovate», i link degli overlay vanno rimessi nelle sorgenti di regia."
   exit 0
 fi
@@ -542,9 +658,11 @@ docker compose up -d --build
 passo "Controllo che la versione di prima sia tornata su"
 if aspetta_sano; then
   echo "tornati alla versione di prima. L'aggiornamento NON è passato: guarda i log qui sopra."
+  scrivi_esito "tornato indietro" "la versione nuova non rispondeva sana dopo 60 secondi: gira di nuovo quella di prima"
   exit 1
 fi
 echo
 echo "Nemmeno la versione di prima risponde. Guarda i log:"
 echo "    docker compose logs --tail=100 bot"
+scrivi_esito "tornato indietro" "la versione nuova non rispondeva sana, e nemmeno quella di prima risponde: guarda i log del bot"
 exit 1

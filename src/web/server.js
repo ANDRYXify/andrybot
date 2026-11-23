@@ -69,6 +69,7 @@ import { rapporto as rapportoBonifica, anteprima as anteprimaBonifica } from '..
 import { stato as statoRete, elenco as elencoRete, dimentica as dimenticaRete } from '../features/rete.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
+import { esitoAggiornamento } from '../aggiornamento-server.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as presenze from '../features/presenze.js';
@@ -13266,6 +13267,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       rss: mem.rss,
       node: process.version,
       backup: statoBackup(),
+      // l'ultimo giro di server/aggiorna.sh, a mano o da solo (docs/AGGIORNARE.md)
+      aggiornamento: esitoAggiornamento(config.dataDir),
       risorse: risorse.stato(),
       betaStudio: streamers.list().filter((x) => x.settings?.betaStudio).length,
     });

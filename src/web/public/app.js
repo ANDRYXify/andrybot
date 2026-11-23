@@ -45020,6 +45020,36 @@ function saluteRisorse(r) {
   </div>`;
 }
 
+function saluteAggiornamento(a) {
+  const tit = `<strong>${L('Aggiornamento del server', 'Server update', 'Actualización del servidor')}</strong>`;
+  const fa = (t) => {
+    if (!t) return '';
+    const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+    return m < 1 ? L('ora', 'now', 'ahora') : m < 60 ? L(`${m} min fa`, `${m} min ago`, `hace ${m} min`) : m < 2880 ? L(`${Math.round(m / 60)} h fa`, `${Math.round(m / 60)} h ago`, `hace ${Math.round(m / 60)} h`) : L(`${Math.round(m / 1440)} giorni fa`, `${Math.round(m / 1440)} days ago`, `hace ${Math.round(m / 1440)} días`);
+  };
+  const visto = a?.controllato ? `<span class="suggerimento">${L('ultimo controllo', 'last check', 'último control')} ${fa(a.controllato)}</span>` : '';
+  if (a && !a.esito) {
+    return `<p class="spazio-sopra" id="salute-aggiornamento">${tit}: ${L('niente di nuovo finora', 'nothing new so far', 'nada nuevo por ahora')} &nbsp;${visto}</p>`;
+  }
+  if (!a) {
+    return `<p class="spazio-sopra suggerimento" id="salute-aggiornamento">${tit}: ${L('nessun giro registrato. Per farlo partire da solo, sul server: <code>bash server/aggiorna-da-solo.sh</code>.', 'no run recorded yet. To make it run by itself, on the server: <code>bash server/aggiorna-da-solo.sh</code>.', 'ninguna vuelta registrada. Para que arranque solo, en el servidor: <code>bash server/aggiorna-da-solo.sh</code>.')}</p>`;
+  }
+  const nomi = {
+    aggiornato: [L('aggiornato', 'updated', 'actualizado'), BADGE.ok],
+    'tornato indietro': [L('tornato indietro', 'rolled back', 'vuelto atrás'), BADGE.attenzione],
+    fermo: [L('fermo', 'stopped', 'detenido'), BADGE.attenzione],
+    'aspetta una diretta': [L('aspetta una diretta', 'waiting for a stream', 'espera un directo'), ''],
+  };
+  const [nome, colore] = nomi[a.esito] || [a.esito, ''];
+  const c = (x) => esc(String(x || '').slice(0, 7));
+  const tratto = (chi, p) => (!p ? '' : `${chi} <code>${p.da && p.da !== p.a ? `${c(p.da)} → ` : ''}${c(p.a)}</code>`);
+  const quando = fa(a.quando);
+  const come = a.come === 'da solo' ? L('da solo', 'by itself', 'solo') : L('a mano', 'by hand', 'a mano');
+  const pezzi = [tratto(L('bot', 'bot', 'bot'), a.bot), tratto(L('cervello', 'brain', 'cerebro'), a.cervello), [quando, come].filter(Boolean).join(', ')].filter(Boolean);
+  return `<p class="spazio-sopra" id="salute-aggiornamento" data-esito="${esc(a.esito)}">${tit}: <span class="badge ${colore}">${esc(nome)}</span> &nbsp;${pezzi.join(' &nbsp;·&nbsp; ')}${visto && a.controllato > (a.quando || 0) + 60000 ? ` &nbsp;·&nbsp; ${visto}` : ''}</p>
+    ${a.motivo && a.esito !== 'aggiornato' ? `<p class="suggerimento">${esc(a.motivo)}</p>` : ''}`;
+}
+
 async function caricaSalute() {
   const box = document.getElementById('salute-box');
   if (!box) return;
@@ -45044,6 +45074,7 @@ async function caricaSalute() {
       ${ko ? `&nbsp; <span class="badge rosso">${ko} ${L('scollegati (token)', 'disconnected (token)', 'desconectados (token)')}: ${(d.chatKO || []).map((c) => '#' + esc(c)).join(', ')}</span>` : ''}
       ${d.ascoltando ? `&nbsp; <span class="badge">${d.ascoltando} ${L('in ascolto live', 'live listening', 'escuchando en directo')}</span>` : ''}
     </p>
+    ${saluteAggiornamento(d.aggiornamento)}
     ${saluteRisorse(d.risorse)}
     ${(d.motivi || []).length ? `<ul class="salute-motivi spazio-sopra">${d.motivi.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
     ${caldi.length ? `<div class="spazio-sopra">

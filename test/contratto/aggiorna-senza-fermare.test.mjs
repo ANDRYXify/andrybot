@@ -90,7 +90,7 @@ test('il collaudo parte alla priorita\' piu\' bassa, e un collaudo verde si rico
     .flatMap((r) => r.split(/&&|\|\|/)).filter((p) => /\bnpm (ci|test|run)\b/.test(p));
   assert.equal(comandi.length, 5, 'installazione, prove e cancelli, di qua e del cervello');
   for (const pezzo of comandi) assert.match(pezzo, /"\$\{BASSA\[@\]\}" npm /, `a priorita' bassa: ${pezzo.trim()}`);
-  assert.match(collaudo, /echo "\$FIRMA_CODICE" > "\$COLLAUDATO"\n\s*echo "collaudo verde ✓"/, 'si ricorda solo quando e\' verde');
+  assert.match(collaudo, /echo "\$FIRMA_CODICE" > "\$COLLAUDATO"\n\s*rm -f "\$BOCCIATO"\n\s*echo "collaudo verde ✓"/, 'si ricorda solo quando e\' verde, e il verde toglie il ricordo di un codice bocciato');
   assert.match(collaudo, /elif \[ "\$\(cat "\$COLLAUDATO" 2>\/dev\/null \|\| true\)" = "\$FIRMA_CODICE" \]; then/);
 });
 
@@ -123,8 +123,8 @@ test('i controlli col browser saltati si dicono una volta sola, e il rosso di un
       { encoding: 'utf8', env: { ...process.env, TMPDIR: dir } });
     assert.equal(senza, 'Playwright non c\'e\': salto.\nesito=5\n', 'il filtro e\' una comodita\': senza, niente si ferma');
   } finally { rmSync(dir, { recursive: true, force: true }); }
-  assert.match(AGG, /\n {2}filtra "\$SALTI_QUI" "\$\{BASSA\[@\]\}" npm run --silent cancelli \|\| torna_indietro\n/);
-  assert.match(AGG, /\n {4}filtra "\$SALTI_LIA" collaudo_cervello \|\| torna_indietro\n/);
+  assert.match(AGG, /\n {2}filtra "\$SALTI_QUI" "\$\{BASSA\[@\]\}" npm run --silent cancelli \|\| torna_indietro "[^"\n]+" bocciato\n/);
+  assert.match(AGG, /\n {4}filtra "\$SALTI_LIA" collaudo_cervello \|\| torna_indietro "[^"\n]+" bocciato\n/);
   assert.match(AGG, /if \[ "\$N_SALTI" -gt 0 \]; then\n\s+echo\n\s+echo "\$N_SALTI controlli col browser saltati/);
 });
 
@@ -139,9 +139,9 @@ test('l\'immagine si costruisce prima, poi si aspetta la fine delle dirette, poi
     'prima si costruisce col bot vecchio acceso, poi si aspetta, poi il segnale, poi si cambia: fra «nessuno in onda» e il cambio non ci sono piu\' i minuti della costruzione');
   assert.match(AGG, /--subito\) SUBITO=1 ;;/, 'per le emergenze c\'e\' --subito');
   assert.match(AGG, /if \[ "\$SUBITO" = "1" \]; then\n\s*passo "Riavvio subito, su tua richiesta"/);
-  assert.match(AGG, /git reset --hard "\$PRIMA" >\/dev\/null\n[^\n]*\n\s*exit 3/, 'se l\'attesa scade il repository torna com\'era');
+  assert.match(AGG, /git reset --hard "\$PRIMA" >\/dev\/null\n[^\n]*\n\s*scrivi_esito "aspetta una diretta" [^\n]*\n\s*exit 3/, 'se l\'attesa scade il repository torna com\'era, e l\'esito lo dice');
   assert.match(AGG, /il bot e' rimasto giu' circa \$\(\( \$\(date \+%s\) - FERMO_DA \)\) secondi\./, 'e alla fine si dice quanto e\' rimasto giu\'');
-  assert.match(AGG, /trap togli_segnale EXIT/, 'il segnale non sopravvive allo script, comunque finisca');
+  assert.match(AGG, /trap 'ESITO_USCITA=\$\?; togli_segnale; alla_fine' EXIT/, 'il segnale non sopravvive allo script, comunque finisca, e l\'esito resta scritto');
   execFileSync('bash', ['-n', new URL('../../server/aggiorna.sh', import.meta.url).pathname]);
 });
 
@@ -160,6 +160,7 @@ test('una diretta partita nell\'istante del segnale si aspetta, e il segnale non
 RADICE='${dir}'; mkdir -p "$RADICE/data"; SUBITO=0; PRIMA=x; SERVE_LIA=0
 passo() { echo "== $*"; }
 git() { echo "git $*"; }
+scrivi_esito() { :; }; alla_fine() { :; }
 echo '{"canali":[],"ts":1}' > "$RADICE/data/.in-onda"
 touch() { command touch "$@"; if [ ! -f "$RADICE/partita" ]; then command touch "$RADICE/partita"; echo '{"canali":["anna"],"ts":2}' > "$RADICE/data/.in-onda"; echo PARTE-ANNA; fi; }
 sleep() {

@@ -128,6 +128,64 @@ per l'audio e la fotocamera). Lo stesso avviso ora esce anche sulla regia da
 telefono, dove prima mancava. Il telefono-fotocamera si ricollega da solo,
 con la sua chiave.
 
+## Il server si aggiorna da solo
+
+Il proprietario vuole che il server prenda da solo gli aggiornamenti, del bot e
+del cervello. **È il server a guardare su GitHub**, con la chiave di sola
+lettura che ha già: niente porte nuove aperte verso l'esterno, niente segreti
+nuovi. Un webhook vorrebbe un indirizzo pubblico e una chiave da custodire, per
+risparmiare qualche minuto.
+
+`server/aggiorna-da-solo.sh` (da root, una volta; rilanciarlo non cambia niente
+se è già tutto a posto) installa un timer di systemd:
+
+- **ogni quarto d'ora**, con un ritardo casuale fino a 4 minuti. Il caso serve
+  solo a non arrivare tutti insieme su GitHub;
+- il servizio lancia `flock -n /run/andrybot-aggiorna.lock bash
+  server/aggiorna.sh`: **mai `--subito`, mai `--salta-prove`**. Da solo aspetta
+  la fine delle dirette, fa il collaudo e, se qualcosa non torna, torna
+  indietro come sempre;
+- **un giro alla volta.** Se un giro è ancora in corso (per esempio aspetta la
+  fine di una diretta, anche ore: il servizio non ha un tempo massimo) quello
+  dopo non parte. Lo stesso lucchetto lo prende `aggiorna.sh` quando lo lancia
+  qualcuno a mano: un giro a mano e uno da solo non girano mai insieme;
+- quando non c'è niente di nuovo `aggiorna.sh` esce subito con «già
+  aggiornato», anche per il cervello (`docs/COLLAUDO.md`, «Il cervello è parte
+  di quello che gira»);
+- **il PATH del servizio** si legge da chi installa: sotto systemd il PATH è
+  quello corto di sistema, e un Node messo altrove non si troverebbe. Se manca
+  `flock`, `git`, `docker`, `node` o `npm`, l'installazione si ferma e lo dice.
+
+**Si vede.** `aggiorna.sh` scrive l'esito di ogni giro che ha fatto qualcosa in
+`data/aggiorna.json`: quando, se l'ha lanciato il timer o qualcuno a mano, da
+quale commit a quale per il bot e per il cervello, e l'esito:
+
+| esito | quando | nel pannello |
+|---|---|---|
+| `aggiornato` | la versione nuova gira e risponde sana | verde |
+| `tornato indietro` | il collaudo è rosso, la costruzione non riesce, o la versione nuova non risponde: il motivo è detto | ambra |
+| `aspetta una diretta` | mentre aspetta, e se l'attesa scade (la versione è collaudata, riprova al giro dopo) | neutro |
+| `fermo` | il giro si è fermato prima: una divergenza di storia, il cervello mancante, GitHub irraggiungibile | ambra |
+
+Non c'è un modo di finire senza esito: un comando rosso imprevisto lo scrive la
+trappola d'uscita, con il passo in cui è successo. I giri senza niente di nuovo
+non si scrivono, ma ogni giro che arriva a guardare lascia l'ora
+(`data/.aggiorna-controllato`): il pannello dice anche «ultimo controllo», così
+si vede che chi controlla è vivo, e un esito di tre giorni fa si legge come
+vecchio. Lo mostra **Gestione → Salute**, nella riga «Aggiornamento del
+server».
+
+**Un codice bocciato non si riprova da solo.** Un commit che non passa il
+collaudo resta su GitHub finché qualcuno non lo corregge, e il giro da solo lo
+riproverebbe ogni quarto d'ora, mezz'ora di collaudo ogni volta. Lo script
+ricorda la firma di ciò che ha bocciato (`data/.bocciato`): il giro da solo la
+salta finché non arriva qualcosa di diverso, quello a mano la riprova, e un
+collaudo verde toglie il ricordo.
+
+**Si spegne** con `AGGIORNA_DA_SOLO=0` in `.env`: il giro esce senza fare
+niente, e quello a mano funziona come sempre. **Si toglie** con `bash
+server/aggiorna-da-solo.sh --togli`. `--stato` dice quando parte il prossimo.
+
 ## Limiti onesti
 
 - Fra l'arrivo del server nuovo e il ricaricamento, una pagina vecchia che
@@ -149,6 +207,13 @@ con la sua chiave.
   cambia un file servito; l'intestazione dopo il cancello; il rifiuto subito
   prima di `tramite.avvia`; ogni pagina che resta aperta carica `versione.js`
   prima di `flusso.js`.
+- `test/contratto/aggiorna-da-solo.test.mjs`: l'installazione gira davvero
+  in una cartella usa e getta con un systemctl finto (servizio prudente con
+  `flock -n`, timer, idempotenza, `--togli`), e lo script vero gira sul banco
+  del bot col cervello accanto (`test/banco-aggiorna.mjs`): l'esito scritto
+  tornando indietro, aspettando, alla costruzione rossa e a un'uscita
+  imprevista; niente scritto quando non c'è niente di nuovo; il codice
+  bocciato non riprovato da solo; l'interruttore; il lucchetto.
 - `scripts/verifica-aggiornamento.mjs` (Chromium): il pannello libero, in uso,
   in diretta, a mano, a cavallo dell'aggiornamento; l'overlay in diretta, a
   fine diretta, con un alert in scena. Una promessa che il collaudo non arriva

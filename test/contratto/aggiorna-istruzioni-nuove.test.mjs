@@ -61,7 +61,9 @@ exit 0
 // pre-push lancia queste prove) GIT_DIR punta al repository vero: con quello
 // ereditato, `git init` e i commit del banco sarebbero finiti nel repository
 // del progetto (e' successo: core.bare acceso, commit «A» e «B» sul suo HEAD).
-const SENZA_GIT = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('GIT_')));
+// Nemmeno le variabili di un giro vero (AGGIORNA_*): il collaudo gira DENTRO un
+// aggiornamento, che tiene il lucchetto e puo' essere partito da solo.
+const SENZA_GIT = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('GIT_') && !k.startsWith('AGGIORNA_')));
 const GIT_ENV = { ...SENZA_GIT, GIT_AUTHOR_NAME: 'prova', GIT_AUTHOR_EMAIL: 'p@p', GIT_COMMITTER_NAME: 'prova', GIT_COMMITTER_EMAIL: 'p@p', GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', HOME: tmpdir() };
 const git = (cwd, ...a) => execFileSync('git', ['-c', 'commit.gpgsign=false', '-c', 'init.defaultBranch=main', ...a], { cwd, env: GIT_ENV, encoding: 'utf8' }).trim();
 
@@ -104,7 +106,7 @@ function bancoIn(dir, { scriptB, caddyB, serverSu }) {
     lancia: (env = {}) => {
       const r = spawnSync('bash', [join(srv, 'server/aggiorna.sh')], {
         cwd: dir, encoding: 'utf8',
-        env: { ...GIT_ENV, ...env, PATH: `${finto}:${process.env.PATH}`, FINTO: finto },
+        env: { ...GIT_ENV, AGGIORNA_LUCCHETTO_FILE: join(dir, 'lucchetto'), ...env, PATH: `${finto}:${process.env.PATH}`, FINTO: finto },
       });
       return { codice: r.status, uscita: (r.stdout || '') + (r.stderr || '') };
     },
