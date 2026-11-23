@@ -501,7 +501,7 @@ test('da capo a fondo: Twitch riceve il live e, come seconda traccia, il VOD sen
 // ogni audioMs) e spedisce a lotti ogni 200 ms; la linea decide quando ogni
 // lotto arriva; il server puo' essere sordo (il giro e i pacchetti fermi).
 // Il giro batte ogni 100 ms, prima dei pacchetti arrivati, come in Node.
-function simula({ margineMs, durataMs, arrivo = (ms) => ms, sordo = () => false, fps = 30, audioMs = 1024 / 48, passoMs = 10, deriva = 0, senzaVideo = () => false }) {
+function simula({ margineMs, durataMs, arrivo = (ms) => ms, sordo = () => false, fps = 30, audioMs = 1024 / 48, passoMs = 10, deriva = 0, senzaVideo = () => false, audioDa = 0, videoDa = 0, giroMs = 100 }) {
   const T0 = 1_000_000;
   let adesso = T0;
   const { scritto, r } = finto();
@@ -512,7 +512,7 @@ function simula({ margineMs, durataMs, arrivo = (ms) => ms, sordo = () => false,
   const { turno } = t.avvia('mario', { destinazioni: DEST, ...CONF, video: { ...CONF.video, fps }, kbps: 3000, margineMs });
   t.riserva('mario', scriviPacchi([pacco('video', 0, true, 'RISERVA-K'), pacco('video', 1e6 / fps, false, 'RISERVA-P'), pacco('audio', 0, true, 'SILENZIO'), pacco('audio', audioMs * 1000, true, 'SILENZIO')]), turno);
   const fatti = { video: [], audio: [] }, viaggio = [];
-  let lotto = [], tV = 0, tA = 0, nV = 0, nA = 0, daChiave = 0, chiedi = false, prossimoLotto = 200, prossimoGiro = 0, n = 0, ultimoArrivo = 0;
+  let lotto = [], tV = videoDa, tA = audioDa, nV = 0, nA = 0, daChiave = 0, chiedi = false, prossimoLotto = 200, prossimoGiro = 0, n = 0, ultimoArrivo = 0;
   for (let ms = 0; ms <= durataMs; ms += passoMs) {
     adesso = T0 + ms;
     for (; tV <= ms; tV += 1000 / fps) {
@@ -531,7 +531,7 @@ function simula({ margineMs, durataMs, arrivo = (ms) => ms, sordo = () => false,
       lotto = [];
     }
     if (sordo(ms)) continue;
-    if (ms >= prossimoGiro) { t.battito(); prossimoGiro = ms + 100; }
+    if (ms >= prossimoGiro) { t.battito(); prossimoGiro = ms + giroMs; }
     while (viaggio.length && viaggio[0].arriva <= ms) {
       const r1 = t.pacchi('mario', n++, scriviPacchi(viaggio.shift().lista), turno);
       if (r1.chiave) chiedi = true;
@@ -561,6 +561,26 @@ test('il margine: un buco della linea piu\' corto del margine non mette nemmeno 
     assert.deepEqual(v.map((x) => x.segno), fatti[tipo].map((p) => p.dati.toString()), `${tipo}: tutti, nell'ordine`);
     assert.ok(v.every((x, i) => x.ms === Math.round(fatti[tipo][i].us / 1000)), `${tipo}: ognuno col suo tempo`);
   }
+});
+
+test('al via il ritmo dell\'audio rispetto alla prima chiave e\' qualunque dentro un passo: non e\' un buco del dispositivo, e non mette la riserva', () => {
+  // Nel browser i codificatori audio e video partono insieme ma non allineati:
+  // il primo blocco audio dopo la chiave d'aggancio sta in un punto qualunque
+  // del suo passo, e quello appena prima della chiave arriva nel lotto prima di
+  // lei (e si scarta: la diretta comincia dalla chiave). Il giro decide a ogni
+  // millesimo, cosi' cade anche fra l'aggancio e il primo blocco audio.
+  const casi = [...[1, 5, 10, 11, 15, 19].map((videoDa) => ({ videoDa })), ...[5, 11, 15, 19].map((audioDa) => ({ audioDa }))];
+  for (const c of casi) {
+    const { fine } = simula({ margineMs: 3_000, durataMs: 3_400, audioMs: 20, passoMs: 1, giroMs: 1, ...c });
+    const { st, b } = fine();
+    assert.equal(st.riserve.n, 0, `${JSON.stringify(c)}: ${JSON.stringify(st.riserve)}`);
+    assert.equal(diRiserva(b).length, 0, `${JSON.stringify(c)}: ${diRiserva(b).length} pacchetti di riserva`);
+  }
+  // un audio che parte davvero tardi (mezzo secondo dopo la chiave) e' un buco
+  // del dispositivo: la riserva lo copre, e lo conta suo
+  const { fine } = simula({ margineMs: 3_000, durataMs: 3_400, audioMs: 20, passoMs: 1, giroMs: 1, audioDa: 500 });
+  const { st } = fine();
+  assert.equal(st.riserve.cause.dispositivo.n, 1, JSON.stringify(st.riserve));
 });
 
 test('il margine: un buco piu\' lungo del margine mette la riserva, contata come della linea; il ritorno riparte da una chiave senza spostare l\'orologio', () => {

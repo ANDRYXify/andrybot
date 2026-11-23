@@ -15,7 +15,8 @@ import { readFileSync, existsSync, mkdtempSync, statSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { creaTramite, ffmpegMultitraccia } from '../../src/features/diretta.js';
+import { creaTramite, ffmpegMultitraccia, SALTO_VIDEO_MS } from '../../src/features/diretta.js';
+import { leggiPacchi } from '../../src/features/diretta-mkv.js';
 import { creaRisorse } from '../../src/risorse.js';
 import { FFMPEG, FFPROBE, materiale, pacchetti } from '../aiuto-diretta.mjs';
 
@@ -35,8 +36,9 @@ async function daCapoAFondo(t, formati, { buco = null, margineMs } = {}) {
   let chromium;
   try { ({ chromium } = await import('/opt/node22/lib/node_modules/playwright/index.mjs')); } catch { t.skip('Playwright non c\'e\''); return null; }
   const cartella = mkdtempSync(join(tmpdir(), 'diretta-chrome-'));
-  const uscite = {}, porte = {}, ricevitori = {};
+  const uscite = {}, porte = {}, ricevitori = {}, ingresso = {}, riserve = {};
   for (const f of formati) {
+    ingresso[f] = { video: [], audio: [], lotti: new Set() };
     uscite[f] = join(cartella, `arrivato-${f}.flv`);
     porte[f] = await portaLibera();
     ricevitori[f] = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-listen', '1', '-f', 'flv', '-i', `rtmp://127.0.0.1:${porte[f]}/live/prova`, '-c', 'copy', '-y', uscite[f]]);
@@ -57,6 +59,13 @@ async function daCapoAFondo(t, formati, { buco = null, margineMs } = {}) {
     if (u.pathname === '/api/diretta/riserva') return rispondi(tramite.riserva(sessione(f), await corpo(q), u.searchParams.get('t')));
     if (u.pathname === '/api/diretta/pacchi') {
       const b = await corpo(q);
+      // quello che il dispositivo ha prodotto davvero, coi suoi tempi, letto
+      // con lo stesso lettore del tramite (un lotto riprovato si conta una volta)
+      const lotto = u.searchParams.get('n');
+      if (!ingresso[f].lotti.has(lotto)) {
+        ingresso[f].lotti.add(lotto);
+        for (const p of leggiPacchi(b)) if (p.tipo !== 'vod') ingresso[f][p.tipo].push({ us: p.us, chiave: p.chiave });
+      }
       // la linea ferma (docs/DIRETTA.md, «Il margine»): le richieste restano in sospeso
       primo ||= Date.now();
       if (buco && Date.now() >= primo + buco[0] && Date.now() < primo + buco[1]) { tenute++; await new Promise((ok) => setTimeout(ok, primo + buco[1] - Date.now())); }
@@ -106,7 +115,12 @@ async function daCapoAFondo(t, formati, { buco = null, margineMs } = {}) {
       const st = tramite.stato(sessione(f));
       assert.deepEqual(st.inRiserva, { video: false, audio: false }, `${f}: alla fine va in onda il dispositivo, non la riserva`);
       assert.equal(st.errore, '', `${f}: il tramite non si lamenta dei tempi: ${st.errore}`);
-      if (buco) { assert.ok(tenute > 0, 'la linea si e\' fermata davvero'); assert.equal(st.riserve.n, 0, `${f}: un buco piu' corto del margine non mette la riserva: ${JSON.stringify(st.riserve)}`); }
+      riserve[f] = st.riserve;
+      // La riserva della linea o del server non c'e' mai: in queste prove la
+      // linea si ferma al piu' per meno del margine. Quella del dispositivo si
+      // giudica con quello che il dispositivo ha prodotto (dalDispositivo).
+      assert.equal(st.riserve.cause.linea.n + st.riserve.cause.server.n, 0, `${f}: niente riserva della linea ne' del server: ${JSON.stringify(st.riserve)}`);
+      if (buco) assert.ok(tenute > 0, 'la linea si e\' fermata davvero');
     }
   } finally {
     await browser.close();
@@ -117,7 +131,63 @@ async function daCapoAFondo(t, formati, { buco = null, margineMs } = {}) {
     for (const f of formati) await new Promise((ok) => { if (ricevitori[f].exitCode !== null) return ok(); ricevitori[f].on('exit', ok); setTimeout(ok, 10_000); });
     for (const f of formati) if (ricevitori[f].exitCode === null) ricevitori[f].kill('SIGKILL');
   }
-  return uscite;
+  return { uscite, ingresso, riserve };
+}
+
+// IL DISPOSITIVO E IL TRAMITE, OGNUNO PER LA SUA PARTE. Chrome su una macchina
+// carica salta fotogrammi e pezzi d'audio: e' il dispositivo, e la puntualita'
+// di una macchina di collaudo non e' una proprieta' del prodotto. Quello che si
+// promette e' del tramite: ogni fotogramma del dispositivo arriva al suo tempo
+// (us/1000 + uno scarto fisso, agganciato al primo fotogramma chiave), oppure
+// al suo posto c'e' la riserva; e la riserva c'e' solo dove il dispositivo ha
+// davvero un buco piu' lungo di SALTO_VIDEO_MS. Un buco in uscita che il
+// dispositivo non aveva, o una riserva dove il dispositivo mandava, e' rosso.
+const SCARTO_MS = 1.5;   // l'FLV scrive i tempi al millisecondo
+function dalDispositivo(t, uscita, f, ing, riserve) {
+  const dentro = ing.video.slice().sort((x, y) => x.us - y.us);
+  const voce = ing.audio.slice().sort((x, y) => x.us - y.us);
+  const attesi = SECONDI * 30;
+  const salti = (xs) => xs.slice(1).map((p, i) => (p.us - xs[i].us) / 1000);
+  const sv = salti(dentro), sa = salti(voce);
+  const passoA = sa.slice().sort((x, y) => x - y)[Math.floor(sa.length / 2)] || 20;
+  const buchiV = sv.filter((x) => x > SALTO_VIDEO_MS).length, buchiA = sa.filter((x) => x > passoA * 1.5 + 1).length;
+  t.diagnostic(`${f}: il dispositivo ha prodotto ${dentro.length} fotogrammi su ${attesi}, salto piu' lungo ${Math.max(0, ...sv).toFixed(0)} ms (audio ${Math.max(0, ...sa).toFixed(0)} ms); riserva ${JSON.stringify(riserve.cause.dispositivo)}`);
+  // una misura che non dice niente non e' un verde ne' un rosso del prodotto: lo si dice
+  assert.ok(dentro.length >= attesi * 0.8, `${f}: la macchina era troppo carica per misurare: il dispositivo ha prodotto ${dentro.length} fotogrammi su ${attesi}`);
+
+  const fuori = pacchetti(uscita, 'v').map((p) => ({ ms: p.t * 1000, chiave: p.chiave }));
+  const k = dentro.findIndex((p) => p.chiave);
+  const scarto = fuori[0].ms - dentro[k].us / 1000;
+  const mandati = dentro.slice(k).map((p) => p.us / 1000 + scarto).filter((ms) => ms <= fuori.at(-1).ms + SCARTO_MS);
+  const suo = fuori.map(() => false), persi = [];
+  let j = 0;
+  for (const ms of mandati) {
+    while (j < fuori.length && fuori[j].ms < ms - SCARTO_MS) j++;
+    if (j < fuori.length && Math.abs(fuori[j].ms - ms) <= SCARTO_MS) { suo[j] = true; j++; } else persi.push(ms);
+  }
+  // Dalla riserva il video torna solo con un fotogramma chiave: dentro un
+  // tratto di riserva, un fotogramma che combacia per caso con uno scartato del
+  // dispositivo e' ancora riserva.
+  const inizi = [];
+  for (let i = 0, dentroRiserva = false; i < fuori.length; i++) {
+    if (!suo[i]) { if (!dentroRiserva) inizi.push(i); dentroRiserva = true; } else if (dentroRiserva) { if (fuori[i].chiave) dentroRiserva = false; else suo[i] = false; }
+  }
+  const daRiserva = fuori.filter((_, i) => !suo[i]);
+  const passoV = 1000 / 30 + SCARTO_MS;
+  const scoperti = persi.filter((ms) => !daRiserva.some((p) => Math.abs(p.ms - ms) <= passoV));
+  assert.deepEqual(scoperti.map((x) => x.toFixed(0)), [], `${f}: ogni fotogramma del dispositivo arriva al suo tempo, o al suo posto c'e' la riserva (${mandati.length - persi.length} arrivati, ${persi.length} coperti dalla riserva)`);
+  // ogni tratto di riserva comincia in un buco vero del dispositivo
+  const prima = (ms) => mandati.filter((x) => x < ms).at(-1), dopo = (ms) => mandati.find((x) => x > ms);
+  for (const i of inizi) {
+    const a = prima(fuori[i].ms), b = a == null ? null : dopo(a);
+    assert.ok(a != null && b != null && b - a > SALTO_VIDEO_MS, `${f}: la riserva del video a ${(fuori[i].ms / 1000).toFixed(2)} s comincia dove il dispositivo mandava (buco del dispositivo di ${a != null && b != null ? (b - a).toFixed(0) : '?'} ms, la riserva vuole piu' di ${SALTO_VIDEO_MS})`);
+  }
+  // in uscita nessun buco piu' lungo di quelli del dispositivo
+  const so = fuori.slice(1).map((p, i) => p.ms - fuori[i].ms);
+  assert.ok(Math.max(...so) <= Math.max(250, ...sv) + SCARTO_MS, `${f}: il video non ha buchi che il dispositivo non aveva: in uscita ${Math.max(...so).toFixed(0)} ms, dal dispositivo ${Math.max(0, ...sv).toFixed(0)} ms`);
+  assert.ok(Math.min(...so) >= Math.min(10, ...sv) - SCARTO_MS, `${f}: due fotogrammi non stanno mai piu' vicini di come li ha fatti il dispositivo (e mai sotto mezzo intervallo): ${Math.min(...so).toFixed(0)} ms`);
+  // le riserve date al dispositivo non sono piu' dei suoi buchi
+  assert.ok(riserve.cause.dispositivo.n <= buchiV + buchiA, `${f}: ogni riserva data al dispositivo ha un suo buco: ${riserve.cause.dispositivo.n} riserve, ${buchiV} buchi del video e ${buchiA} dell'audio`);
 }
 
 function controllaArrivato(uscita, f) {
@@ -129,8 +199,6 @@ function controllaArrivato(uscita, f) {
   const pacchetti = (s) => spawnSync(FFPROBE, ['-v', 'error', '-select_streams', s, '-show_entries', 'packet=pts_time', '-of', 'csv=p=0', uscita], { encoding: 'utf8' }).stdout.trim().split('\n').map(Number);
   const salti = (xs) => xs.slice(1).map((x, i) => x - xs[i]);
   const v = pacchetti('v'), a = pacchetti('a');
-  assert.ok(Math.min(...salti(v)) >= 0.010, `${f}: due fotogrammi non stanno mai a meno di mezzo intervallo: salto minimo ${Math.min(...salti(v)).toFixed(3)} s`);
-  assert.ok(Math.max(...salti(v)) < 0.25, `${f}: il video non ha buchi: salto massimo ${Math.max(...salti(v)).toFixed(3)} s`);
   assert.ok(Math.max(...salti(a)) < 0.1, `${f}: l'audio non ha buchi: salto massimo ${Math.max(...salti(a)).toFixed(3)} s`);
   // Le piattaforme tagliano i segmenti solo su un fotogramma chiave: senza,
   // chi guarda aspetta e la diretta parte «super in ritardo».
@@ -144,18 +212,18 @@ function controllaArrivato(uscita, f) {
 }
 
 test('da capo a fondo con Google Chrome: il dispositivo codifica, il tramite copia, arriva una diretta pulita', SALTA, async (t) => {
-  const uscite = await daCapoAFondo(t, ['o']);
-  if (uscite) controllaArrivato(uscite.o, 'o');
+  const r = await daCapoAFondo(t, ['o']);
+  if (r) { controllaArrivato(r.uscite.o, 'o'); dalDispositivo(t, r.uscite.o, 'o', r.ingresso.o, r.riserve.o); }
 });
 
 test('da capo a fondo con Google Chrome: la linea si ferma due secondi, meno del margine, e la diretta arriva intera senza riserva', SALTA, async (t) => {
-  const uscite = await daCapoAFondo(t, ['o'], { buco: [3_000, 5_000], margineMs: 3_000 });
-  if (uscite) controllaArrivato(uscite.o, 'o');
+  const r = await daCapoAFondo(t, ['o'], { buco: [3_000, 5_000], margineMs: 3_000 });
+  if (r) { controllaArrivato(r.uscite.o, 'o'); dalDispositivo(t, r.uscite.o, 'o', r.ingresso.o, r.riserve.o); }
 });
 
 test('orizzontale e verticale insieme: due dirette pulite dallo stesso dispositivo, ognuna nel suo formato', SALTA, async (t) => {
-  const uscite = await daCapoAFondo(t, ['o', 'v']);
-  if (uscite) { controllaArrivato(uscite.o, 'o'); controllaArrivato(uscite.v, 'v'); }
+  const r = await daCapoAFondo(t, ['o', 'v']);
+  if (r) for (const f of ['o', 'v']) { controllaArrivato(r.uscite[f], f); dalDispositivo(t, r.uscite[f], f, r.ingresso[f], r.riserve[f]); }
 });
 
 // LA TRACCIA DEL VOD con il codice vero del dispositivo (docs/DIRETTA.md,

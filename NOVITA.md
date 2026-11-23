@@ -46,6 +46,9 @@ comandi diversi da quelli della riga italiana.
 - Gli aggiornamenti del bot ora arrivano da soli, entro un quarto d'ora, e mai durante una diretta: il server aspetta che finisca.
   en: Bot updates now arrive by themselves, within a quarter of an hour, and never during a stream: the server waits for it to end.
   es: Las actualizaciones del bot ahora llegan solas, en menos de un cuarto de hora, y nunca durante un directo: el servidor espera a que termine.
+- Diretta dal browser: all'avvio non compare più una «riserva del dispositivo» che non c'era. A molte partenze il conto delle riserve segnava 1 e il primo istante di audio era di riserva, anche con la connessione perfetta.
+  en: Browser streaming: a «device fallback» that never happened no longer shows up at the start. Many starts counted 1 fallback and played the first instant of audio from the fallback, even on a perfect connection.
+  es: Directo desde el navegador: al empezar ya no aparece una «reserva del dispositivo» que no existía. Muchos inicios contaban 1 reserva y el primer instante de audio era de reserva, aun con conexión perfecta.
 
 ## 2026-11-13
 

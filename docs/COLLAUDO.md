@@ -491,6 +491,39 @@ nella radice con dentro le variabili che ha lui, si gira `npm test`, e lo si
 toglie. È l'unico modo di vedere il difetto, perché in sviluppo quel file non
 c'è.
 
+### Né quanto è carica, né che browser ha
+
+**Il carico.** Le prove di `test/unita/diretta-chrome.test.mjs` fanno girare il
+dispositivo vero in Google Chrome. Su una macchina carica Chrome salta qualche
+fotogramma o un pezzo d'audio: è il dispositivo, e la puntualità di una macchina
+di collaudo non è una proprietà del prodotto. Prima la prova chiedeva
+un'uscita «senza buchi» e «senza riserva» in assoluto, ed era rossa a caso
+(una volta su tre su quattro processori). Ora il server della prova legge ogni
+lotto con lo stesso lettore del tramite e sa cosa ha prodotto davvero il
+dispositivo; la prova promette solo la parte del tramite:
+
+- ogni fotogramma del dispositivo arriva al suo tempo, oppure al suo posto c'è
+  la riserva;
+- ogni tratto di riserva comincia in un buco vero del dispositivo, più lungo di
+  `SALTO_VIDEO_MS` (dalla riserva si torna solo su un fotogramma chiave: dentro
+  un tratto, un fotogramma che combacia per caso è ancora riserva);
+- in uscita nessun buco più lungo di quelli del dispositivo, e nessuna riserva
+  data al dispositivo senza un suo buco;
+- se il dispositivo ha prodotto meno dell'80% dei fotogrammi, la prova lo dice
+  («macchina troppo carica per misurare»), invece di dare la colpa al prodotto.
+
+Rotture fatte apposta, tutte viste: il margine tolto, un fotogramma perso ogni
+50, i tempi spostati di 100 ms, il primo blocco audio misurato come prima. La
+pagina inceppata 1,2 s (un buco vero del dispositivo) resta verde, con la
+riserva contata sua. Misurando così è venuto fuori un difetto vero del
+tramite, al via: vedi docs/DIRETTA.md, «Quando entra la riserva».
+
+**Il browser.** Un cancello non scrive a mano come il browser scrive un numero:
+le regole cambiano tra versioni (dalla versione 48 dei dati di lingua, CLDR,
+l'italiano scrive «5000» e non più «5.000», ma ancora «15.000»). Lo chiede alla
+stessa funzione della pagina che lo scrive, o allo stesso `Intl` con la lingua
+della pagina.
+
 ## La console del collaudo dice gli esiti
 
 Le prove provocano apposta rifiuti, errori e avvisi: è il loro mestiere. Finché

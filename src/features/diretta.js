@@ -298,8 +298,12 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
       if (ultimo + passo > limite) return;
       let nelDispositivo = false;
       if (coda.length) {
-        // un buco nei tempi del dispositivo: il prossimo pacchetto c'e' gia'
-        if (coda[0].ms - ultimo <= (video ? SALTO_VIDEO_MS : passo * 1.5)) return;
+        // un buco nei tempi del dispositivo: il prossimo pacchetto c'e' gia'.
+        // Prima del primo pacchetto della traccia si misura dall'aggancio: il
+        // ritmo fra le tracce e' qualunque dentro un passo, e il blocco appena
+        // prima della chiave d'aggancio si scarta (la diretta comincia da lei).
+        const da = Number.isFinite(s.ultimo[tipo]) ? ultimo : s.aggancio;
+        if (coda[0].ms - da <= (video ? SALTO_VIDEO_MS : passo * 1.5)) return;
         nelDispositivo = true;
       } else {
         // coda vuota: il margine e' finito se la linea ha avuto un margine

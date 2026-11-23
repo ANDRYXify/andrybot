@@ -290,6 +290,13 @@ Quello che il modello qui sopra non diceva, deciso prima del codice.
     ripartenza da chiave. Sotto il secondo chi guarda vede un fotogramma fermo,
     come in OBS; sopra, la scritta dice la verità. La riserva comincia comunque
     subito dopo l'ultimo fotogramma vero, così i tempi non hanno buchi.
+    Prima del primo pacchetto di una traccia il buco si misura **dall'aggancio**,
+    non da un passo prima: il ritmo dell'audio rispetto alla chiave d'aggancio è
+    qualunque dentro un passo, e il blocco appena prima della chiave si scarta
+    (la diretta comincia da lei). Misurato da un passo prima, un audio regolare
+    che partiva fra mezzo passo e un passo dopo la chiave sembrava un buco: 20 ms
+    di riserva e una «riserva del dispositivo» nel conto, a molte partenze. Un
+    audio che parte davvero tardi resta un buco del dispositivo.
 - **Il server fermo un attimo.** Il fermo si misura col giro stesso del
   tramite (ogni 100 ms): se un giro arriva tardi di più di un giro, il server
   era sordo da quando il giro doveva arrivare. È ciò che misura
