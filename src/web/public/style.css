@@ -407,17 +407,10 @@ body.menu-aperto.menu-via .backdrop { opacity: 0; pointer-events: none; }
 
 #app { min-height: min(94svh, 900px); }
 
-@view-transition { navigation: auto; }
 .barra-top { view-transition-name: testata; }
 .marchio-segno { view-transition-name: marchio; }
 .pie { view-transition-name: piede; }
 
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) { animation: none !important; }
-}
-::view-transition-old(root), ::view-transition-new(root) { animation: none; }
 
 body.vetrina .contenuto { max-width: 1040px; }
 

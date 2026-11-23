@@ -124,12 +124,6 @@ body:not(.con-nav) .barra-top { display: none; }
 .barra-top { view-transition-name: testata; }
 .marchio-segno { view-transition-name: marchio; }
 .pie { view-transition-name: piede; }
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) { animation: none !important; }
-}
-::view-transition-old(root), ::view-transition-new(root) { animation: none; }
 body.vetrina .contenuto { max-width: 1040px; }
 .lingua-sel { display: inline-flex; gap: 2px; margin-bottom: 1.1rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
 .lingua-btn { border: 0; background: none; color: var(--testo-3); font: inherit; font-size: .78rem; font-weight: 700; letter-spacing: .02em; padding: .26rem .6rem; border-radius: 999px; cursor: pointer; transition: color var(--molla), background var(--molla); }
