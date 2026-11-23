@@ -22,6 +22,11 @@ import { banco, VERO, git } from '../banco-aggiorna.mjs';
 import { esitoAggiornamento } from '../../src/aggiornamento-server.js';
 
 const RAD = new URL('../..', import.meta.url).pathname;
+
+// L'ora la scrive lo script, con date: la si misura con lo stesso orologio, non
+// con quello di Node (che verifica-orologio.mjs sposta in avanti).
+const oraDelloScript = () => Number(spawnSync('date', ['-u', '+%s'], { encoding: 'utf8' }).stdout.trim()) * 1000;
+const fraLeDue = (t, prima, dopo) => Number.isFinite(t) && t >= prima && t <= dopo + 999;
 const INSTALLA = readFileSync(join(RAD, 'server/aggiorna-da-solo.sh'), 'utf8');
 const SENZA = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('GIT_') && !k.startsWith('AGGIORNA_')));
 
@@ -110,7 +115,9 @@ test('tornato indietro: l\'esito resta scritto, col motivo e coi commit', () => 
   const b = banco({ botSu: 'A' });
   try {
     b.segna('.deployato', `${b.A} ${b.L1}`);
+    const prima = oraDelloScript();
     const r = b.lancia([], { NPM_TEST_ESITO: '1', AGGIORNA_GIRO_DA_SOLO: '1' });
+    const dopo = oraDelloScript();
     assert.equal(r.codice, 1, r.uscita);
     assert.equal(b.bot(), b.A, 'il repository e\' tornato dov\'era');
     const e = b.esito();
@@ -120,7 +127,7 @@ test('tornato indietro: l\'esito resta scritto, col motivo e coi commit', () => 
     assert.deepEqual(e.bot, { da: b.A, a: b.B });
     assert.deepEqual(e.cervello, { da: b.L1, a: b.L2 });
     assert.equal(e.come, 'da solo');
-    assert.ok(Date.now() - Date.parse(e.quando) < 120000);
+    assert.ok(fraLeDue(Date.parse(e.quando), prima, dopo), `quando=${e.quando}: l'ora del giro`);
   } finally { b.pulisci(); }
 });
 
@@ -198,12 +205,14 @@ test('ogni giro che guarda lascia l\'ora dell\'ultimo controllo, anche quando no
   const b = banco({ cervelloNuovo: false });
   try {
     b.segna('.deployato', `${b.B} ${b.L1}`);
+    const prima = oraDelloScript();
     const r = b.lancia([], { AGGIORNA_GIRO_DA_SOLO: '1' });
+    const dopo = oraDelloScript();
     assert.match(r.uscita, /già aggiornato/);
     assert.equal(b.esito(), null, 'l\'esito no');
     const e = esitoAggiornamento(b.dati);
     assert.equal(e.esito, null);
-    assert.ok(Date.now() - e.controllato < 120000, 'l\'ultimo controllo si');
+    assert.ok(fraLeDue(e.controllato, prima, dopo), 'l\'ultimo controllo si, con l\'ora del giro');
   } finally { b.pulisci(); }
 });
 
