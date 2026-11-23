@@ -108,6 +108,55 @@ RAMO="$(git rev-parse --abbrev-ref HEAD)"
 NUOVI="$(git rev-list --count HEAD..origin/"$RAMO" 2>/dev/null || echo 0)"
 PERSI="$(git rev-list --count origin/"$RAMO"..HEAD 2>/dev/null || echo 0)"
 
+# ---- 2a. il cervello privato, PRIMA di decidere --------------
+# Il codice del cervello vive in un repository a parte (LIA_DIR, di solito la
+# cartella accanto a questa). Da quando è così, aggiornare QUESTO senza avere
+# QUELLO vorrebbe dire costruire i container del cervello dal nulla: si ferma
+# prima, con l'istruzione giusta, invece di scoprirlo a metà del build.
+#
+# E si guarda QUI, prima della decisione, non dopo. E' successo il 22 novembre:
+# il clone del cervello e' stato portato su una storia nuova, e lo script non ha
+# aggiornato niente. Decideva guardando solo il bot, e col bot fermo usciva con
+# «già aggiornato» prima di arrivare al cervello. E una storia del cervello
+# divergente la scopriva al merge, dopo aver gia' portato avanti il bot.
+LIA_DIR_CONF="$( { grep -E '^LIA_DIR=' .env 2>/dev/null || true; } | tail -1 | cut -d= -f2- )"
+LIA_DIR="${LIA_DIR_CONF:-../lia}"
+case "$LIA_DIR" in /*) ;; *) LIA_DIR="$RADICE/$LIA_DIR" ;; esac
+# il percorso vero, senza «..»: finisce nei comandi da copiare
+if [ -d "$LIA_DIR" ]; then LIA_DIR="$(cd "$LIA_DIR" && pwd)"; fi
+SERVE_LIA=0
+if contiene 'LIA_DIR' git show "origin/$RAMO:docker-compose.yml"; then SERVE_LIA=1; fi
+LIA_NUOVI=0; LIA_PERSI=0
+if [ "$SERVE_LIA" = "1" ]; then
+  if [ ! -d "$LIA_DIR/.git" ]; then
+    echo "Il codice in arrivo si aspetta il cervello privato in $LIA_DIR, e lì non c'è niente."
+    echo "Prima adottalo (una volta sola):"
+    echo "    cd $RADICE && bash server/adotta-lia.sh"
+    muori "senza il cervello privato non aggiorno."
+  fi
+  if [ -n "$(git -C "$LIA_DIR" status --porcelain --untracked-files=no)" ]; then
+    prime 10 git -C "$LIA_DIR" status --short
+    muori "il cervello privato ha modifiche non salvate: committale o annullale prima."
+  fi
+  LIA_PRIMA="${AGGIORNA_LIA_RIPRESO_DA:-$(git -C "$LIA_DIR" rev-parse HEAD)}"
+  git -C "$LIA_DIR" fetch --quiet origin
+  LIA_RAMO="$(git -C "$LIA_DIR" rev-parse --abbrev-ref HEAD)"
+  LIA_NUOVI="$(git -C "$LIA_DIR" rev-list --count HEAD..origin/"$LIA_RAMO" 2>/dev/null || echo 0)"
+  LIA_PERSI="$(git -C "$LIA_DIR" rev-list --count origin/"$LIA_RAMO"..HEAD 2>/dev/null || echo 0)"
+fi
+
+# UNA FIRMA SOLA DI COSA GIRA: il bot, piu' il cervello quando serve. Si
+# calcola qui e basta, e la usano tutti quelli che chiedono «cosa gira?»: il
+# confronto col segno qui sotto, il collaudo gia' fatto (5) e il segno che si
+# lascia alla fine (7). Prima erano due firme per la stessa domanda, e una
+# dimenticava il cervello.
+firma_codice() {
+  local f
+  f="$(git rev-parse HEAD)"
+  if [ "$SERVE_LIA" = "1" ]; then f="$f $(git -C "$LIA_DIR" rev-parse HEAD)"; fi
+  echo "$f"
+}
+
 # COSA GIRA, che non e' la stessa domanda di «c'e' un commit nuovo».
 #
 # Il caso e' successo: un giro tira giu' il codice, il collaudo va rosso e si
@@ -121,18 +170,22 @@ PERSI="$(git rev-list --count origin/"$RAMO"..HEAD 2>/dev/null || echo 0)"
 # HEAD, c'e' lavoro da fare anche se git non ha niente da portare.
 SEGNO="$RADICE/data/.deployato"
 GIRA="$(cat "$SEGNO" 2>/dev/null || echo '')"
-ATTESO="$(git rev-parse HEAD)"
+ATTESO="$(firma_codice)"
 #
 # E «quello che gira» comprende la porta d'ingresso: un giro di prima puo'
 # averla lasciata con un Caddyfile vecchio (e' successo, vedi in cima), e senza
 # questo controllo ogni giro dopo direbbe «già aggiornato» per sempre.
 if [ -n "$RIPRESO" ]; then
   echo "ripreso con le istruzioni nuove: da $(git rev-parse --short "$PRIMA") a $(git rev-parse --short HEAD)."
-elif [ "$NUOVI" = "0" ] && [ "$PERSI" = "0" ]; then
+elif [ "$NUOVI" = "0" ] && [ "$PERSI" = "0" ] && [ "$LIA_NUOVI" = "0" ] && [ "$LIA_PERSI" = "0" ]; then
   if [ "$GIRA" != "$ATTESO" ]; then
     echo "niente di nuovo da prendere, MA quello che gira non è questo codice:"
     echo "  in esecuzione: ${GIRA:-(mai segnato)}"
     echo "  qui:           $ATTESO"
+    # il segno di prima diceva solo il bot: una volta non combacia, poi si'
+    if [ "$SERVE_LIA" = "1" ] && [ "$GIRA" = "$(git rev-parse HEAD)" ]; then
+      echo "(il segno di cosa gira è del formato di prima, solo il bot: ricostruisco una volta, e da qui in poi dice anche il cervello.)"
+    fi
     echo "ricostruisco."
   elif ! porta_in_pari; then
     echo "niente di nuovo da prendere, e il bot gira proprio questo codice, MA la porta"
@@ -150,37 +203,23 @@ if [ "$PERSI" != "0" ]; then
   echo "    git -C $RADICE fetch origin && git -C $RADICE reset --hard origin/$RAMO"
   muori "non tiro dritto da solo su una divergenza di cronologia."
 fi
+# Lo stesso per il cervello, e PRIMA di toccare il bot: una divergenza scoperta
+# al merge lasciava il bot avanti e il cervello indietro.
+if [ "$LIA_PERSI" != "0" ]; then
+  echo "La cronologia del cervello qui e quella su GitHub sono DIVERSE ($LIA_PERSI commit locali non sono là)."
+  echo "Succede dopo una riscrittura della cronologia. Se sei sicuro che GitHub abbia ragione:"
+  echo "    git -C $LIA_DIR fetch origin && git -C $LIA_DIR reset --hard origin/$LIA_RAMO"
+  muori "non tiro dritto da solo su una divergenza di cronologia del cervello. Il bot non l'ho toccato."
+fi
 
 echo "$NUOVI commit in arrivo:"
 prime 15 git log --oneline HEAD..origin/"$RAMO"
 
 # ---- 2b. il cervello privato -------------------------------
-# Il codice del cervello vive in un repository a parte (LIA_DIR, di solito la
-# cartella accanto a questa). Da quando è così, aggiornare QUESTO senza avere
-# QUELLO vorrebbe dire costruire i container del cervello dal nulla: si ferma
-# prima, con l'istruzione giusta, invece di scoprirlo a metà del build.
+# (letto e controllato in 2a, prima di decidere: qui si dice cosa arriva)
 passo "Il cervello privato"
-LIA_DIR_CONF="$( { grep -E '^LIA_DIR=' .env 2>/dev/null || true; } | tail -1 | cut -d= -f2- )"
-LIA_DIR="${LIA_DIR_CONF:-../lia}"
-case "$LIA_DIR" in /*) ;; *) LIA_DIR="$RADICE/$LIA_DIR" ;; esac
-SERVE_LIA=0
-if contiene 'LIA_DIR' git show "origin/$RAMO:docker-compose.yml"; then SERVE_LIA=1; fi
 if [ "$SERVE_LIA" = "1" ]; then
-  if [ ! -d "$LIA_DIR/.git" ]; then
-    echo "Il codice in arrivo si aspetta il cervello privato in $LIA_DIR, e lì non c'è niente."
-    echo "Prima adottalo (una volta sola):"
-    echo "    cd $RADICE && bash server/adotta-lia.sh"
-    muori "senza il cervello privato non aggiorno."
-  fi
-  if [ -n "$(git -C "$LIA_DIR" status --porcelain --untracked-files=no)" ]; then
-    prime 10 git -C "$LIA_DIR" status --short
-    muori "il cervello privato ha modifiche non salvate: committale o annullale prima."
-  fi
-  LIA_PRIMA="${AGGIORNA_LIA_RIPRESO_DA:-$(git -C "$LIA_DIR" rev-parse HEAD)}"
   echo "cervello adesso su $(git -C "$LIA_DIR" rev-parse --short HEAD) — $(git -C "$LIA_DIR" log -1 --format=%s)"
-  git -C "$LIA_DIR" fetch --quiet origin
-  LIA_RAMO="$(git -C "$LIA_DIR" rev-parse --abbrev-ref HEAD)"
-  LIA_NUOVI="$(git -C "$LIA_DIR" rev-list --count HEAD..origin/"$LIA_RAMO" 2>/dev/null || echo 0)"
   echo "$LIA_NUOVI commit in arrivo per il cervello"
   prime 10 git -C "$LIA_DIR" log --oneline HEAD..origin/"$LIA_RAMO"
 else
@@ -228,8 +267,7 @@ command -v ionice >/dev/null 2>&1 && BASSA+=(ionice -c 3)
 # Il collaudo e' una funzione del codice: se questo commit (e quello del
 # cervello) e' gia' passato, non si rifa'.
 COLLAUDATO="$RADICE/data/.collaudato"
-FIRMA_CODICE="$(git rev-parse HEAD)"
-[ "$SERVE_LIA" = "1" ] && FIRMA_CODICE="$FIRMA_CODICE $(git -C "$LIA_DIR" rev-parse HEAD)"
+FIRMA_CODICE="$(firma_codice)"
 if [ "$SALTA" = "1" ]; then
   echo; echo "collaudo saltato su tua richiesta."
 elif [ "$(cat "$COLLAUDATO" 2>/dev/null || true)" = "$FIRMA_CODICE" ]; then
@@ -488,7 +526,7 @@ if aspetta_sano; then
   # Il segno si lascia QUI e solo qui: dopo che il container e' stato
   # ricostruito E ha risposto sano. Scriverlo prima vorrebbe dire dichiarare
   # deployata una versione che magari non parte.
-  mkdir -p "$(dirname "$SEGNO")" && git rev-parse HEAD > "$SEGNO"
+  mkdir -p "$(dirname "$SEGNO")" && firma_codice > "$SEGNO"
   echo "aggiornato a $(git rev-parse --short HEAD) — se nei log c'è «chiavi degli overlay rinnovate», i link degli overlay vanno rimessi nelle sorgenti di regia."
   exit 0
 fi

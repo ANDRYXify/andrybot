@@ -279,6 +279,46 @@ script vero gira davvero, su un repository e un'origine usa e getta, con un
 `docker` e un `npm` finti che fanno come quelli veri e registrano cosa gli si
 chiede. Ogni difetto, iniettato da solo, le fa rosse.
 
+### Il cervello è parte di quello che gira
+
+Successo il 22 novembre: il clone del cervello sul server (`LIA_DIR`) è stato
+portato su una storia nuova, e `aggiorna.sh` non ha aggiornato niente. Il bot
+era fermo, e la riga «cervello ora su …» non è uscita.
+
+Lo script decideva se c'era lavoro guardando solo il bot: i commit nuovi e
+quelli persi erano del bot, «quello che dovrebbe girare» era l'HEAD del bot, e
+il segno di cosa gira (`data/.deployato`) scriveva solo quello. Con il bot
+fermo e il segno che combaciava usciva con «già aggiornato», prima ancora di
+guardare il cervello. Il collaudo invece il cervello lo conosceva già: la sua
+firma (`data/.collaudato`) era il bot più il cervello. Due firme per la stessa
+domanda, «cosa gira?», e una delle due dimenticava il cervello.
+
+C'era un secondo difetto: una storia del cervello divergente si scopriva al
+merge, dopo aver già portato avanti il bot. L'aggiornamento restava a metà.
+
+Adesso:
+
+- il cervello si legge **prima della decisione** (2a): la cartella, se il
+  codice in arrivo lo chiede, il fetch, e i suoi commit nuovi e persi con lo
+  stesso conto del bot;
+- **una firma sola** di cosa gira, `firma_codice`: l'HEAD del bot, più quello
+  del cervello se serve. La usano il confronto col segno, il collaudo già
+  fatto e il segno che si lascia alla fine;
+- «già aggiornato» solo con zero commit nuovi e zero persi da **tutti e due**
+  i lati, e con la firma che combacia;
+- una storia del cervello divergente **ferma il giro subito**, prima di
+  toccare il bot, con il comando per rimetterla in pari.
+
+Il passaggio: il segno lasciato dalla versione di prima dice solo il bot. Al
+primo giro con la firma nuova non combacia, e il server ricostruisce una volta;
+lo script lo dice in una riga. Dal giro dopo combacia.
+
+Le prove sono in `test/contratto/aggiorna-cervello.test.mjs`: lo script vero
+gira su due repository e due origini usa e getta, il bot e il cervello accanto
+come sul server. Sullo script di prima erano rosse nei due casi del 22
+novembre: con il bot fermo e un commit nuovo solo nel cervello diceva «già
+aggiornato», e con la storia del cervello divergente portava avanti il bot.
+
 ### Cosa ha trovato alla prima esecuzione
 
 Un difetto vero: `package-lock.json` non era in pari con `package.json`.
