@@ -131,7 +131,11 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
     `${nome}: «Usalo per un evento» mette le stelle col loro suono in un livello nuovo dei bit (da 5.000), e apre parte e foglio`, JSON.stringify({ parte: await parte(p), dopo, terzo }));
   dice(cima >= 0 && cima < alt * 0.5, `${nome}: il titolo del foglio arriva in alto, non sotto la piega`, `top=${Math.round(cima)}`);
   dice(sporco === true, `${nome}: la pagina resta da salvare`, `da salvare=${sporco}`);
-  dice(/Stelle da 5\.000 bit/.test(dopo.resa) && /da 5\.000 bit «Stelle»/.test(dopo.cosi), `${nome}: il titolo e la riga «Così» dicono il livello nuovo`, `${dopo.resa} | ${dopo.cosi}`);
+  // Il numero lo scrive il browser, col formato italiano che ha lui: le regole
+  // cambiano tra versioni (da CLDR 48 «5000» resta senza punto, «15.000» no).
+  // Lo si chiede alla funzione che lo scrive nel foglio (_eeN), non lo si scrive qui.
+  const cinquemila = (await p.evaluate(() => _eeN(5000))).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  dice(new RegExp(`Stelle da ${cinquemila} bit`).test(dopo.resa) && new RegExp(`da ${cinquemila} bit «Stelle»`).test(dopo.cosi), `${nome}: il titolo e la riga «Così» dicono il livello nuovo`, `${dopo.resa} | ${dopo.cosi}`);
 
   // l'editor del livello è quello dei pronti: la neve al posto delle stelle
   await p.evaluate(() => { azzeraBarraSalva(); document.querySelector('#ee-fogli details[data-ee="cheer"] [data-ee-gal] [data-pronto="neve"]').scrollIntoView({ behavior: 'instant', block: 'center' }); });
@@ -139,7 +143,7 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
   await p.waitForTimeout(200);
   const neve = await foglio(p, 'cheer');
   const doppi = await p.evaluate(() => ({ id: document.querySelectorAll('[id="pronti-durata"]').length, ee: document.querySelectorAll('[id="ee-cheer-2-durata"]').length }));
-  dice(/Neve da 5\.000 bit/.test(neve.resa) && neve.livelli[2] === 'Neve' && await p.evaluate(() => _ciSonoModifiche()) === true,
+  dice(new RegExp(`Neve da ${cinquemila} bit`).test(neve.resa) && neve.livelli[2] === 'Neve' && await p.evaluate(() => _ciSonoModifiche()) === true,
     `${nome}: nel livello si cambia effetto con la stessa galleria, e il foglio lo dice subito`, JSON.stringify(neve));
   dice(doppi.id === 1 && doppi.ee === 1, `${nome}: due editor nella pagina, ognuno coi suoi id`, JSON.stringify(doppi));
 
